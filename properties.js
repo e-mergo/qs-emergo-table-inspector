@@ -7,7 +7,7 @@
  */
 define([
 	"./util/util",
-	"text!./emergo-table-inspector.qext"
+	"text!./qs-emergo-table-inspector.qext"
 ], function( util, qext ) {
 
 	/**
@@ -40,7 +40,7 @@ define([
 				component: "button",
 				action: function() {
 					util.requireMarkdownMimetype().finally( function() {
-						window.open(window.requirejs.toUrl("extensions/emergo-table-inspector/docs/docs.html"), "_blank");
+						window.open(window.requirejs.toUrl("extensions/qs-emergo-table-inspector/docs/docs.html"), "_blank");
 					});
 				}
 			}

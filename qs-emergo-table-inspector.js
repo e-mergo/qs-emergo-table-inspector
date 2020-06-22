@@ -4,19 +4,21 @@
  * @since 20191019
  * @author Laurens Offereins <https://github.com/lmoffereins>
  *
- * @param  {Object} qlik      Qlik's core API
- * @param  {Object} qvangular Qlik's Angular implementation
- * @param  {Object} $         jQuery
- * @param  {Object} _         Underscore
- * @param  {Object} $q        Angular's promise library
- * @param  {Object} qUtil     Qlik's utility library
- * @param  {Object} Resize    Qlik's resize API
- * @param  {Object} props     Property panel definition
- * @param  {Object} initProps Initial properties
- * @param  {Object} util      E-mergo utility functions
- * @param  {String} css       Extension stylesheet
- * @param  {String} tmpl      Extension template file
- * @return {Object}           Extension structure
+ * @param  {Object} qlik             Qlik's core API
+ * @param  {Object} qvangular        Qlik's Angular implementation
+ * @param  {Object} $                jQuery
+ * @param  {Object} _                Underscore
+ * @param  {Object} $q               Angular's promise library
+ * @param  {Object} qUtil            Qlik's utility library
+ * @param  {Object} Resize           Qlik's resize API
+ * @param  {Object} objectConversion Qlik's object conversion API
+ * @param  {Object} props            Property panel definition
+ * @param  {Object} initProps        Initial properties
+ * @param  {Object} util             E-mergo utility functions
+ * @param  {Object} uiUtil           E-mergo interface utility functions
+ * @param  {String} css              Extension stylesheet
+ * @param  {String} tmpl             Extension template file
+ * @return {Object}                  Extension structure
  */
 define([
 	"qlik",
@@ -36,7 +38,7 @@ define([
 ], function( qlik, qvangular, $, _, $q, qUtil, Resize, objectConversion, props, initProps, util, uiUtil, css, tmpl ) {
 
 	// Add global styles to the page
-	util.registerStyle("emergo-table-inspector", css);
+	util.registerStyle("qs-emergo-table-inspector", css);
 
 	// Get current app
 	var app = qlik.currApp(),
@@ -73,7 +75,7 @@ define([
 	 * @return {Object} Scope
 	 */
 	getExtensionScopeFromElement = function( element ) {
-		return $(element).parents(".emergo-table-inspector").scope();
+		return $(element).parents(".qs-emergo-table-inspector").scope();
 	},
 
 	/**
@@ -772,7 +774,7 @@ define([
 		});
 
 		// Container id
-		$scope.containerId = "emergo-table-inspector-" + $scope.$id;
+		$scope.containerId = "qs-emergo-table-inspector-" + $scope.$id;
 
 		// Removed fields
 		$scope.removedFields = $scope.layout.removedFields || [];

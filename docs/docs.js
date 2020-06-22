@@ -50,7 +50,7 @@
 		$("body").addClass("error-file-not-found");
 
 		// Setup content
-		setupDocContent("## Oops, something went wrong\nThe file containing the extension's documentation named `README.md` was not found. Please try to use the extension once with a RootAdmin account or refer to the original extension repository or go to https://www.e-mergo.nl for more information.");
+		setupDocContent("## Oops, something went wrong\nThe file containing the extension's documentation named `README.md` could not be loaded.\n\nPlease try to open the extension's documentation once with a RootAdmin account or choose one of the following:\n\n- Open the [README.md](../README.md) file directly\n - Refer to the original extension repository on GitHub\n- Visit https://www.e-mergo.nl/e-mergo-tools-bundle for more information");
 	});
 
 	/**
@@ -175,7 +175,7 @@
 		// Page license
 		if (props.license) {
 			$header.find("hgroup").append(
-				$("<span> </span>").addClass("license").text("License: ").append(
+				$("<span></span>").addClass("license").text("License: ").append(
 					$('<a target="_blank"></a>').text(props.license).attr("href", "../LICENSE.txt")
 				)
 			);
@@ -183,8 +183,11 @@
 
 		// Bundle context
 		if (props.bundle) {
+			var bundleUrl = props.bundle.url;
 			$header.find("hgroup").append(
-				$("<span></span>").addClass("context").attr("title", props.bundle.description).text("Part of the " + props.bundle.name)
+				$("<span></span>").addClass("context").attr("title", props.bundle.description).text("Part of the ").append(
+					bundleUrl ? $('<a target="_blank"></a>').text(props.bundle.name).attr("href", bundleUrl) : props.bundle.name
+				)
 			);
 		}
 	}

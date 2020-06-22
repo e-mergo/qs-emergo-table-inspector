@@ -7,7 +7,7 @@
  * @return {Object}               Initial properties
  */
 define([
-	"text!./emergo-table-inspector.qext"
+	"text!./qs-emergo-table-inspector.qext"
 ], function( qext ) {
 	return {
 		props: {
