@@ -9,9 +9,9 @@ QEXT: qs-emergo-table-inspector.qext
 
 **E-mergo Table Inspector** is a Qlik Sense visualization extension created by [E-mergo](https://www.e-mergo.nl). This extension enables the dashboard designer to quickly inspect the contents of virtual data tables that make up an app's datamodel.
 
-This extension is part of the [E-mergo Tools bundle](https://www.e-mergo.nl/e-mergo-tools-bundle).
+This extension is part of the [E-mergo Tools bundle](https://www.e-mergo.nl/e-mergo-tools-bundle/?utm_medium=download&utm_source=tools_bundle&utm_campaign=E-mergo_Extension&utm_term=toolsbundle&utm_content=sitelink).
 
-This extension is [hosted on GitHub](https://github.com/emergo/qs-emergo-table-inspector). You can report bugs and discuss features on the [issues page](https://github.com/emergo/qs-emergo-table-inspector/issues).
+This extension is [hosted on GitHub](https://github.com/e-mergo/qs-emergo-table-inspector). You can report bugs and discuss features on the [issues page](https://github.com/e-mergo/qs-emergo-table-inspector/issues).
 
 ## Why is this extension needed?
 A seasoned Qlik Sense app developer sees herself frequently inspecting the contents of an app's datamodel. Next to using the data model viewer this frequently happens by setting up a straight table and adding the fields of interest. When inspecting a multitude of data tables, or of data tables with many fields, this task quickly becomes time consuming.
