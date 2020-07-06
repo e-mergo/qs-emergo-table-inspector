@@ -1,7 +1,7 @@
 ---
 Qlik Sense Visualization Extension
 Name: E-mergo Table Inspector
-Version: 1.0.20200623
+Version: 1.1.20200706
 QEXT: qs-emergo-table-inspector.qext
 ---
 
@@ -51,6 +51,9 @@ E-mergo provides paid support through standard support contracts. For other scen
 Requests for additional features can be posted in the extension's GitHub repository. Depending on your own code samples and the availability of E-mergo developers your request may be considered and included.
 
 ## Changelog
+
+#### 1.1.20200706
+- Fixed a bug where the export data dialog would not open in QS April 2020 and up
 
 #### 1.0.20200623
 - Updated docs files
