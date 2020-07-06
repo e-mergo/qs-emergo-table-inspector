@@ -29,13 +29,14 @@ define([
 	"util",
 	"core.utils/resize",
 	"objects.extension/object-conversion",
+	"client.services/export-dialog/export-dialog",
 	"./properties",
 	"./initial-properties",
 	"./util/util",
 	"./util/ui-util",
 	"text!./style.css",
 	"text!./template.ng.html"
-], function( qlik, qvangular, $, _, $q, qUtil, Resize, objectConversion, props, initProps, util, uiUtil, css, tmpl ) {
+], function( qlik, qvangular, $, _, $q, qUtil, Resize, objectConversion, exportDialog, props, initProps, util, uiUtil, css, tmpl ) {
 
 	// Add global styles to the page
 	util.registerStyle("qs-emergo-table-inspector", css);
@@ -1035,17 +1036,12 @@ define([
 				// }
 
 				// Export data
-				var exportSubmenu = menu.addItem({
-					label: "Export", // Translation?
+				menu.addItem({
+					translation: "contextMenu.export",
 					tid: "export",
-					icon: "lui-icon lui-icon--export"
-				});
-
-				exportSubmenu.addItem({
-					label: "Export data", // Translation?
-					tid: "export-data",
+					icon: "lui-icon lui-icon--export",
 					select: function() {
-						qvangular.getService("$exportDialog").show(model);
+						exportDialog.show(model);
 					}
 				});
 
