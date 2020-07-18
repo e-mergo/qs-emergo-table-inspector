@@ -155,6 +155,8 @@ define([
 	 * @return {Object}       Picked properties
 	 */
 	getTablePropsFromObjProps = function( props ) {
+		props = props || { props: { removedFields: [] }, qHyperCubeDef: {} };
+
 		var a = _.pick(props, "props", "qHyperCubeDef");
 
 		// Define additional table properties
