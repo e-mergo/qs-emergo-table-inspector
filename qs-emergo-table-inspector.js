@@ -230,21 +230,18 @@ define([
 	updateExtensionVisualization = function( $scope, props ) {
 		var patcher = getPatches("extension");
 
-		// Get the extension's object model
-		return app.getObject($scope.options.id).then( function( model ) {
+		// Clear the table structure
+		props.props.tableStructure = [];
 
-			// Clear the table structure
-			props.props.tableStructure = [];
+		// Walk the visualization's dimensions
+		props.qHyperCubeDef.qDimensions.forEach( function( a ) {
 
-			// Walk the visualization's dimensions
-			props.qHyperCubeDef.qDimensions.forEach( function( a ) {
-
-				// Rebuild the table structure
-				props.props.tableStructure.push(a.qDef.qFieldDefs[0]);
-			});
-
-			return model.applyPatches(patcher(props));
+			// Rebuild the table structure
+			props.props.tableStructure.push(a.qDef.qFieldDefs[0]);
 		});
+
+		// Get the extension's object model
+		return $scope.object.model.applyPatches(patcher(props));
 	},
 
 	/**
