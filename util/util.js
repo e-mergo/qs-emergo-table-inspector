@@ -1,28 +1,34 @@
 /**
  * E-mergo Utility library
  *
- * @version 20200124
+ * @version 20200729
  *
  * @package E-mergo
  *
  * @param  {Object} qlik                Qlik's core API
  * @param  {Object} qvangular           Qlik's Angular implementation
- * @param  {Object} $                   jQuery
- * @param  {Object} _                   Underscore
  * @param  {Object} $q                  Angular's promise library
+ * @param  {Object} axios               Axios
+ * @param  {Object} _                   Underscore
+ * @param  {Object} util                Qlik's generic utility library
  * @param  {Object} arrayUtil           Qlik's array utility library
  * @param  {Object} StringNormalization Qlik's string normalization library
  */
 define([
 	"qlik",
 	"qvangular",
-	"jquery",
-	"underscore",
 	"ng!$q",
+	"axios",
+	"underscore",
+	"util",
 	"general.utils/array-util",
 	"general.utils/string-normalization"
-], function( qlik, qvangular, $, _, $q, arrayUtil, StringNormalization ) {
-
+], function( qlik, qvangular, $q, axios, _, util, arrayUtil, StringNormalization ) {
+	/**
+	 * Holds the cached data
+	 *
+	 * @type {Object}
+	 */
 	var cachedData = {},
 
 	/**
@@ -227,6 +233,16 @@ define([
 	},
 
 	/**
+	 * Return a number from an expression's result
+	 *
+	 * @param  {String}  a Expression's result
+	 * @return {Number}    Does the expression evaluate to a number
+	 */
+	numberFromExpression = function( a ) {
+		return "undefined" !== typeof a && ! isNaN(parseInt(a)) ? parseInt(a) : 0;
+	},
+
+	/**
 	 * Parser for replacing dynamic button properties
 	 *
 	 * The `parsable` set needs to contain '$1' through '$n' for receiving the
@@ -275,6 +291,35 @@ define([
 		}
 
 		return parsable;
+	},
+
+	/*
+	 * Wrapper for requests made to Qlik's QRS REST API
+	 *
+	 * @param  {Object|String} args Request data or url
+	 * @return {Promise} Request response
+	 */
+	qlikRequest = function( args ) {
+		var globalProps = qlik.getGlobal().session.options;
+
+		// When provided just the url
+		if ("string" === typeof args) {
+			args = { url: args };
+		}
+
+		// Prefix QRS calls with the proxy
+		if (0 === args.url.indexOf("/qrs") && globalProps.prefix.length) {
+			args.url = globalProps.prefix.replace(/\/+$/, "") + args.url;
+		}
+
+		// Default params
+		args.params = args.params || {};
+		args.headers = args.headers || {};
+
+		/**
+		 * Axios is setup by QS to handle xsrf tokens.
+		 */
+		return axios(args);
 	},
 
 	/**
@@ -345,6 +390,7 @@ define([
 	requireMarkdownMimetype = function() {
 		var dfd = $q.defer();
 
+		// Check desktop vs other environments
 		app.global.isPersonalMode().then( function( resp ) {
 
 			// Bail when in a Desktop environment
@@ -353,16 +399,14 @@ define([
 				return;
 			}
 
-			var api = qvangular.getService("$contentApi");
-
 			// Check whether the Markdown mimetype is registered
-			api.request({
+			qlikRequest({
 				url: "/qrs/mimetype?filter=mime so 'markdown'"
 			}).then( function( resp ) {
 
 				// Create Markdown mimetype when it's not registered
 				if (! resp.data.length) {
-					api.request({
+					qlikRequest({
 						method: "POST",
 						url: "/qrs/mimetype",
 						data: {
@@ -377,7 +421,7 @@ define([
 				} else {
 					dfd.resolve(true);
 				}
-			});
+			}).catch(dfd.reject);
 		});
 
 		return dfd.promise;
@@ -648,7 +692,9 @@ define([
 		createCache: createCache,
 		hexToRgb: hexToRgb,
 		isDarkColor: isDarkColor,
+		numberFromExpression: numberFromExpression,
 		parseDynamicParams: parseDynamicParams,
+		qlikRequest: qlikRequest,
 		registerStyle: registerStyle,
 		registerObjStyle: registerObjStyle,
 		requireMarkdownMimetype: requireMarkdownMimetype,
