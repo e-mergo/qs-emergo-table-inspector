@@ -52,6 +52,10 @@ Requests for additional features can be posted in the extension's GitHub reposit
 
 ## Changelog
 
+#### 1.2.20200731
+- Fixed a bug where the extension would result in an error when embedded
+- Fixed logic for the _Open Documentation_ button
+
 #### 1.1.20200706
 - Fixed a bug where the export data dialog would not open in QS April 2020 and up
 
