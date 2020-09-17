@@ -43,7 +43,9 @@
 	position: relative;
 }
 
-.qv-layout-xsmall .qs-emergo-table-inspector .button {
+.qv-layout-small .qs-emergo-table-inspector .button,
+.qv-layout-xsmall .qs-emergo-table-inspector .button,
+.qv-layout-spark .qs-emergo-table-inspector .button {
 	height: 28px;
 	width: 150px;
 }
