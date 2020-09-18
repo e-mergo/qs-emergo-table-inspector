@@ -52,24 +52,27 @@ Requests for additional features can be posted in the extension's GitHub reposit
 
 ## Changelog
 
+#### 1.3.20200918 - QS Sept 2020
+- Fixed the layout for smaller extension object sizes.
+
 #### 1.2.20200731
-- Fixed a bug where the extension would result in an error when embedded
-- Fixed logic for the _Open Documentation_ button
+- Fixed a bug where the extension would result in an error when embedded.
+- Fixed logic for the _Open Documentation_ button.
 
 #### 1.1.20200706
-- Fixed a bug where the export data dialog would not open in QS April 2020 and up
+- Fixed a bug where the export data dialog would not open in QS April 2020 and up.
 
 #### 1.0.20200623
-- Updated docs files
+- Updated docs files.
 
 #### 1.0.20200622
-- Fixed internal naming and updated docs
+- Fixed internal naming and updated docs.
 
 #### 0.2.20200227
-- Added loading spinner for selections of large data tables
-- Added auto-sync for removed data tables
-- Fixed handling of synthetic tables and keys
-- Fixed incorrect context menu items for table cells outside of data columns
+- Added loading spinner for selections of large data tables.
+- Added auto-sync for removed data tables.
+- Fixed handling of synthetic tables and keys.
+- Fixed incorrect context menu items for table cells outside of data columns.
 
 #### 0.1.20200114
 Initial release.
