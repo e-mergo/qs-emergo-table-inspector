@@ -1,5 +1,6 @@
 {
-	"name": "E-mergo Table Inspector",
+	"title": "E-mergo Table Inspector",
+	"name": "Table Inspector",
 	"type": "visualization",
 	"author": "Laurens Offereins, E-mergo",
 	"version": "1.3.20200918",
