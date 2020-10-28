@@ -884,12 +884,30 @@ define([
 			var items = args.items, model = args.model;
 
 			if ($scope.vizId) {
-				var switchTableSubmenu, addFieldSubmenu, removeFieldSubmenu,
+				var switchTableSubmenu, addFieldSubmenu, removeFieldSubmenu, cellFieldName,
+
+				// Find the cell's scope
+				cellScope = getStCellScope($event.target) || {},
+
+				// Find the cell's cell data
+				cell = cellScope.cell || cellScope.header,
 
 				// Find the selected table
 				selectedTable = items.find( function( a ) {
 					return a.value === object.layout.props.tableName;
 				});
+
+				// Copy cell value
+				if (cell && !! cell.text) {
+					menu.addItem({
+						translation: "contextMenu.copyCellValue",
+						tid: "copy-cell-context-item",
+						icon: "lui-icon lui-icon--copy",
+						select: function() {
+							util.copyToClipboard(cell.text);
+						}
+					});
+				}
 
 				// Reset inspector
 				menu.addItem({
@@ -967,19 +985,20 @@ define([
 
 				// Remove field sub-items. Keep 1 remaining field in the table
 				if (object.layout.props.removedFields.length < (selectedTable.qData.qFields.length - 1)) {
-					var ctxScope = getStCellScope($event.target),
-					    ctxFieldName = ctxScope && ctxScope.$parent.$parent.grid.headerList.rows[0].cells.filter( function( a ) {
-							return a.dataColIx === (ctxScope.cell || ctxScope.header).dataColIx;
+					if (cell) {
+						cellFieldName = cellScope.$parent.$parent.grid.headerList.rows[0].cells.filter( function( a ) {
+							return a.dataColIx === cell.dataColIx;
 						})[0].fieldName;
+					}
 
 					// Context: Top level item: Remove this field
-					if (ctxScope && ctxFieldName.length) {
+					if (!! cellFieldName) {
 						menu.addItem({
-							label: "Remove field '" + ctxFieldName + "'",
+							label: "Remove field '" + cellFieldName + "'",
 							tid: "remove-this-field",
 							icon: "lui-icon lui-icon--cut",
 							select: function() {
-								removeTableField($scope, selectedTable, ctxFieldName);
+								removeTableField($scope, selectedTable, cellFieldName);
 							}
 						});
 					}
@@ -991,12 +1010,12 @@ define([
 					});
 
 					// Context: Sub level item: Remove all other fields
-					if (ctxScope && ctxFieldName.length) {
+					if (!! cellFieldName) {
 						removeFieldSubmenu.addItem({
-							label: "Remove all but '" + ctxFieldName + "'",
+							label: "Remove all but '" + cellFieldName + "'",
 							tid: "remove-other-fields",
 							select: function() {
-								removeOtherTableFields($scope, selectedTable, ctxFieldName);
+								removeOtherTableFields($scope, selectedTable, cellFieldName);
 							}
 						});
 					}
