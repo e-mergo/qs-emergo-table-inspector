@@ -89,7 +89,7 @@ define([
 			return items.qtr.filter( function( a ) {
 
 				// Discard synthetic tables
-				return 0 !== a.qName.indexOf("$Syn");
+				return ! a.qIsSynthetic;
 
 			}).map( function( a ) {
 
