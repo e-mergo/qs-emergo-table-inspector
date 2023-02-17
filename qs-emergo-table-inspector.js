@@ -85,7 +85,13 @@ define([
 	 * @return {Promise} List of app tables
 	 */
 	getAppTables = function() {
-		return qlik.currApp().model.engineApp.getTablesAndKeys({}, {}, 0, true, false).then( function( items ) {
+
+		// Bail when the `engineApp` interface is not available (when embedded)
+		if (! app.model.engineApp) {
+			return $q.resolve([]);
+		}
+
+		return app.model.engineApp.getTablesAndKeys({}, {}, 0, true, false).then( function( items ) {
 			return items.qtr.filter( function( a ) {
 
 				// Discard synthetic tables
@@ -806,7 +812,7 @@ define([
 		 * @return {Void}
 		 */
 		$scope.open = function() {
-			if (! $scope.object.inEditState() && ! $scope.vizId) {
+			if (! $scope.object.inEditState() && ! $scope.options.noInteraction && ! $scope.vizId) {
 				popover.isActive() ? popover.close() : popover.open();
 			}
 		};

@@ -11,6 +11,10 @@
 	width: 100%;
 }
 
+.qs-emergo-table-inspector.no-interaction {
+	pointer-events: none;
+}
+
 .qs-emergo-table-inspector .inspector-loading {
 	width: 100%;
 	height: 100%;
