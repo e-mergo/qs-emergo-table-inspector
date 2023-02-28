@@ -166,8 +166,8 @@ define([
 		var a = _.pick(props, "props", "qHyperCubeDef");
 
 		// Define additional table properties
-		a.title = "Table Inspector - " + props.props.tableName;
-		a.subtitle = props.props.removedFields.length ? "Removed fields: " + props.props.removedFields.join(", ") : "";
+		a.title = "Table Inspector - ".concat(props.props.tableName);
+		a.subtitle = props.props.removedFields.length ? "Removed fields: ".concat(props.props.removedFields.join(", ")) : "";
 
 		return a;
 	},
@@ -197,11 +197,11 @@ define([
 			for (var i in props) {
 				if (props.hasOwnProperty(i)) {
 					if ("object" === typeof props[i] && ! Array.isArray(props[i])) {
-						getPatches(type)(props[i], path + i + "/", patches);
-					} else if (-1 !== pathsToPatch[type].indexOf(path + i)) {
+						getPatches(type)(props[i], path.concat(i, "/"), patches);
+					} else if (-1 !== pathsToPatch[type].indexOf(path.concat(i))) {
 						patches.push({
 							qOp: "replace",
-							qPath: path + i,
+							qPath: path.concat(i),
 							qValue: JSON.stringify(props[i])
 						});
 					}
@@ -438,7 +438,7 @@ define([
 
 		// Create viz-on-the-fly with selected patches
 		return app.visualization.create("table", [], _props).then( function( object ) {
-			var $container = $("#" + $scope.containerId),
+			var $container = $("#".concat($scope.containerId)),
 
 			// Insert object in the extension's element
 			showed = object.show($scope.containerId, {
@@ -460,7 +460,7 @@ define([
 						    hasNewStructure = _.difference(prevStructure, newStructure).length || _.difference(newStructure, prevStructure).length;
 
 						// Structure was not found, table removed, so reset the extension visualization
-						if (!fieldNames.length){
+						if (! fieldNames.length){
 							resetExtensionVisualization($scope);
 
 						// Structure was changed, so reload the embedded visualization
@@ -771,7 +771,7 @@ define([
 				enterIdle: function( lifecycle ) {
 
 					// Clear inner html
-					$("#" + $scope.containerId).empty();
+					$("#".concat($scope.containerId)).empty();
 
 					// Detach id from scope
 					$scope.vizId = undefined;
@@ -780,7 +780,7 @@ define([
 		});
 
 		// Container id
-		$scope.containerId = "qs-emergo-table-inspector-" + $scope.$id;
+		$scope.containerId = "qs-emergo-table-inspector-".concat($scope.$id);
 
 		// Removed fields
 		$scope.removedFields = $scope.layout.removedFields || [];
@@ -971,7 +971,7 @@ define([
 						}).forEach( function( a ) {
 							addFieldSubmenu.addItem({
 								label: a.qName,
-								tid: "add-field-" + a.qName,
+								tid: "add-field-".concat(a.qName),
 								select: function() {
 									addTableField($scope, selectedTable, a.qName);
 								}
@@ -979,7 +979,7 @@ define([
 						});
 					} else {
 						menu.addItem({
-							label: "Add field '" + object.layout.props.removedFields[0] + "'",
+							label: "Add field '".concat(object.layout.props.removedFields[0], "'"),
 							tid: "add-field",
 							icon: "lui-icon lui-icon--paste",
 							select: function() {
@@ -1000,7 +1000,7 @@ define([
 					// Context: Top level item: Remove this field
 					if (!! cellFieldName) {
 						menu.addItem({
-							label: "Remove field '" + cellFieldName + "'",
+							label: "Remove field '".concat(cellFieldName, "'"),
 							tid: "remove-this-field",
 							icon: "lui-icon lui-icon--cut",
 							select: function() {
@@ -1018,7 +1018,7 @@ define([
 					// Context: Sub level item: Remove all other fields
 					if (!! cellFieldName) {
 						removeFieldSubmenu.addItem({
-							label: "Remove all but '" + cellFieldName + "'",
+							label: "Remove all but '".concat(cellFieldName, "'"),
 							tid: "remove-other-fields",
 							select: function() {
 								removeOtherTableFields($scope, selectedTable, cellFieldName);
@@ -1028,15 +1028,15 @@ define([
 
 					selectedTable.qData.qFields.filter( function( a ) {
 						return -1 === object.layout.props.removedFields.indexOf(a.qName);
-					}).map( function( v, i ) {
-						v.$index = i;
+					}).map( function( v, ix ) {
+						v.$index = ix;
 						return v;
 					}).sort( function( a, b ) {
 						return model.layout.qHyperCube.qColumnOrder.indexOf(a.$index) - model.layout.qHyperCube.qColumnOrder.indexOf(b.$index);
 					}).forEach( function( a ) {
 						removeFieldSubmenu.addItem({
 							label: a.qName,
-							tid: "remove-field-" + a.qName,
+							tid: "remove-field-".concat(a.qName),
 							select: function() {
 								removeTableField($scope, selectedTable, a.qName);
 							}
