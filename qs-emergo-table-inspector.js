@@ -530,9 +530,10 @@ define([
 	 * @param  {Object} $scope Extension scope
 	 * @param  {Object} tableData Table data
 	 * @param  {String} fieldName Field name
+	 * @param  {String} position Optional. Position where to insert the field.
 	 * @return {Promise} Field is added
 	 */
-	addTableField = function( $scope, tableData, fieldName ) {
+	addTableField = function( $scope, tableData, fieldName, position ) {
 
 		// Remove the field from the table's hidden fields list
 		$scope.removedFields = _.difference($scope.removedFields, [fieldName]);
@@ -561,7 +562,19 @@ define([
 
 			// Add the field to ordering and sorting lists
 			["qColumnOrder", "qInterColumnSortOrder"].forEach( function( a ) {
-				newProps.qHyperCubeDef[a].push(newProps.qHyperCubeDef.qDimensions.length - 1);
+				var ix = newProps.qHyperCubeDef.qDimensions.length - 1;
+
+				// Update field indices
+				newProps.qHyperCubeDef[a] = newProps.qHyperCubeDef[a].map( function( b ) {
+					return b < ix ? b : b + 1;
+				});
+
+				// Add field at position
+				if ("undefined" === typeof position) {
+					newProps.qHyperCubeDef[a].push(ix);
+				} else {
+					newProps.qHyperCubeDef[a] = newProps.qHyperCubeDef[a].slice(0, position + 1).concat(ix, newProps.qHyperCubeDef[a].slice(position + 1));
+				}
 			});
 
 			// Update props on the table and extension
@@ -574,9 +587,10 @@ define([
 	 *
 	 * @param  {Object} $scope Extension scope
 	 * @param  {Object} tableData Table data
-	 * @return {Promise} Field is added
+	 * @param  {String} position Optional. Position where to insert the field.
+	 * @return {Promise} Fields are added
 	 */
-	addAllTableFields = function( $scope, tableData ) {
+	addAllTableFields = function( $scope, tableData, position ) {
 
 		// Get the embedded visualization's properties
 		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
@@ -589,7 +603,7 @@ define([
 			};
 
 			// Walk the removed fields
-			$scope.removedFields.forEach( function( a ) {
+			$scope.removedFields.forEach( function( a, num ) {
 
 				// Add field to the dimension list
 				newProps.qHyperCubeDef.qDimensions.push({
@@ -605,11 +619,23 @@ define([
 
 				// Add the field to ordering and sorting lists
 				["qColumnOrder", "qInterColumnSortOrder"].forEach( function( a ) {
-					newProps.qHyperCubeDef[a].push(newProps.qHyperCubeDef.qDimensions.length - 1);
+					var ix = newProps.qHyperCubeDef.qDimensions.length - 1;
+
+					// Update field indices
+					newProps.qHyperCubeDef[a] = newProps.qHyperCubeDef[a].map( function( b ) {
+						return b < ix ? b : b + 1;
+					});
+
+					// Add field at position
+					if ("undefined" === typeof position) {
+						newProps.qHyperCubeDef[a].push(ix);
+					} else {
+						newProps.qHyperCubeDef[a] = newProps.qHyperCubeDef[a].slice(0, position + num + 1).concat(ix, newProps.qHyperCubeDef[a].slice(position + num + 1));
+					}
 				});
 			});
 
-			// Remove all fields from the table's hidden fields list
+			// Clear the table's hidden fields list after they were added
 			$scope.removedFields = [];
 
 			// Update props on the table and extension
@@ -638,26 +664,25 @@ define([
 					tableName: tableData.value,
 					removedFields: $scope.removedFields
 				}
-			};
+			},
 
 			// Find field in hypercube
-			field = newProps.qHyperCubeDef.qDimensions.find(function( a ) {
+			ix = newProps.qHyperCubeDef.qDimensions.findIndex(function( a ) {
 				return a.qDef.qFieldDefs[0] === fieldName;
 			});
 
 			// Field is found
-			if (field) {
+			if (-1 !== ix) {
 
 				// Remove the field from the dimension list
-				var i = newProps.qHyperCubeDef.qDimensions.indexOf(field);
-				newProps.qHyperCubeDef.qDimensions.splice(i, 1);
+				newProps.qHyperCubeDef.qDimensions.splice(ix, 1);
 
 				// Remove the field from ordering and sorting lists
 				["qColumnOrder", "qInterColumnSortOrder"].forEach( function( a ) {
 					newProps.qHyperCubeDef[a] = newProps.qHyperCubeDef[a].filter( function( b ) {
-						return b !== i;
+						return b !== ix;
 					}).map( function( b ) {
-						return b < i ? b : b - 1;
+						return b < ix ? b : b - 1;
 					});
 				});
 
@@ -890,13 +915,18 @@ define([
 			var items = args.items, model = args.model;
 
 			if ($scope.vizId) {
-				var switchTableSubmenu, addFieldSubmenu, removeFieldSubmenu, cellFieldName,
+				var switchTableSubmenu, addFieldSubmenu, removeFieldSubmenu,
 
 				// Find the cell's scope
 				cellScope = getStCellScope($event.target) || {},
 
 				// Find the cell's cell data
 				cell = cellScope.cell || cellScope.header,
+
+				// Find the cell's column data
+				column = cell ? cellScope.$parent.$parent.grid.headerList.rows[0].cells.filter( function( a ) {
+					return a.dataColIx === cell.dataColIx;
+				})[0] : {},
 
 				// Find the selected table
 				selectedTable = items.find( function( a ) {
@@ -962,7 +992,7 @@ define([
 							label: "Add all fields",
 							tid: "add-all-fields",
 							select: function() {
-								addAllTableFields($scope, selectedTable);
+								addAllTableFields($scope, selectedTable, cell.colIx);
 							}
 						});
 
@@ -973,7 +1003,7 @@ define([
 								label: a.qName,
 								tid: "add-field-".concat(a.qName),
 								select: function() {
-									addTableField($scope, selectedTable, a.qName);
+									addTableField($scope, selectedTable, a.qName, cell.colIx);
 								}
 							});
 						});
@@ -983,7 +1013,7 @@ define([
 							tid: "add-field",
 							icon: "lui-icon lui-icon--paste",
 							select: function() {
-								addTableField($scope, selectedTable, object.layout.props.removedFields[0]);
+								addTableField($scope, selectedTable, object.layout.props.removedFields[0], cell.colIx);
 							}
 						});
 					}
@@ -991,20 +1021,15 @@ define([
 
 				// Remove field sub-items. Keep 1 remaining field in the table
 				if (object.layout.props.removedFields.length < (selectedTable.qData.qFields.length - 1)) {
-					if (cell) {
-						cellFieldName = cellScope.$parent.$parent.grid.headerList.rows[0].cells.filter( function( a ) {
-							return a.dataColIx === cell.dataColIx;
-						})[0].fieldName;
-					}
 
 					// Context: Top level item: Remove this field
-					if (!! cellFieldName) {
+					if (column.isDimension) {
 						menu.addItem({
-							label: "Remove field '".concat(cellFieldName, "'"),
+							label: "Remove field '".concat(column.fieldName, "'"),
 							tid: "remove-this-field",
 							icon: "lui-icon lui-icon--cut",
 							select: function() {
-								removeTableField($scope, selectedTable, cellFieldName);
+								removeTableField($scope, selectedTable, column.fieldName);
 							}
 						});
 					}
@@ -1016,12 +1041,12 @@ define([
 					});
 
 					// Context: Sub level item: Remove all other fields
-					if (!! cellFieldName) {
+					if (column.isDimension) {
 						removeFieldSubmenu.addItem({
-							label: "Remove all but '".concat(cellFieldName, "'"),
+							label: "Remove all but '".concat(column.fieldName, "'"),
 							tid: "remove-other-fields",
 							select: function() {
-								removeOtherTableFields($scope, selectedTable, cellFieldName);
+								removeOtherTableFields($scope, selectedTable, column.fieldName);
 							}
 						});
 					}
