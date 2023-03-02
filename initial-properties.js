@@ -14,10 +14,12 @@ define([
 			tableName: false,
 			tableStructure: [],
 			exportDimensions: [],
-			removedFields: []
+			removedFields: [],
+			addedMeasures: []
 		},
 		qHyperCubeDef: {
 			qDimensions: [],
+			qMeasures: [],
 			qColumnOrder: [],
 			qInterColumnSortOrder: []
 		},
