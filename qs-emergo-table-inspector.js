@@ -864,7 +864,7 @@ define([
 			},
 
 			// Find measure in columns
-			colNum = newProps.qHyperCubeDef.qInterColumnSortOrder.length > position ? newProps.qHyperCubeDef.qInterColumnSortOrder[position] : -1,
+			colNum = newProps.qHyperCubeDef.qColumnOrder.length > position ? newProps.qHyperCubeDef.qColumnOrder[position] : -1,
 
 			// Find measure in hypercube
 			ix = -1 !== colNum ? colNum - newProps.qHyperCubeDef.qDimensions.length : -1;
