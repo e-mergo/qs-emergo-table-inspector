@@ -556,6 +556,11 @@ define([
 	 */
 	reloadEmbeddedViz = function( $scope ) {
 		return getAppTableByName($scope.layout.props.tableName).then( function( tableData ) {
+
+			// When reloading, clear the stored manipulations
+			$scope.removedFields = [];
+			$scope.addedMeasures = [];
+
 			return selectTable($scope, tableData);
 		});
 	},
