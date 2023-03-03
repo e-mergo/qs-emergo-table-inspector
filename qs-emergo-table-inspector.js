@@ -26,6 +26,7 @@ define([
 	"jquery",
 	"underscore",
 	"ng!$q",
+	"translator",
 	"util",
 	"core.utils/resize",
 	"objects.extension/object-conversion",
@@ -36,7 +37,7 @@ define([
 	"./util/ui-util",
 	"text!./style.css",
 	"text!./template.ng.html"
-], function( qlik, qvangular, $, _, $q, qUtil, Resize, objectConversion, exportDialog, props, initProps, util, uiUtil, css, tmpl ) {
+], function( qlik, qvangular, $, _, $q, translator, qUtil, Resize, objectConversion, exportDialog, props, initProps, util, uiUtil, css, tmpl ) {
 
 	// Add global styles to the page
 	util.registerStyle("qs-emergo-table-inspector", css);
@@ -952,7 +953,7 @@ define([
 		 * @return {Object} Popover methods
 		 */
 		var popover = uiUtil.uiSearchableListPopover({
-			title: "Tables",
+			title: translator.get("DataManager.Filter.Tabs.Tables"),
 			get: function( setItems ) {
 				getAppTables().then( function( tables ) {
 					setItems(tables);
