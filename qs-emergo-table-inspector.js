@@ -1129,8 +1129,8 @@ define([
 					return a.dataColIx === cell.dataColIx;
 				}) : {},
 
-				// Find the table's visualization scope
-				$vizScope = cell ? $cellScope.$parent.$parent.$parent.$parent : {},
+				// Find the table's visualization scope. Header cells have an extra parent level
+				$vizScope = $cellScope.header ? $cellScope.$parent.$parent.$parent.$parent.$parent : ($cellScope.cell ? $cellScope.$parent.$parent.$parent.$parent : false),
 
 				// Find the selected table
 				selectedTable = tables.find( function( a ) {
@@ -1181,8 +1181,8 @@ define([
 					}
 				});
 
-				// Add field sub-items
-				if (object.layout.props.removedFields.length) {
+				// Add field sub-items. Require cell context
+				if (cell && object.layout.props.removedFields.length) {
 
 					// Create submenu when multiple fields are removed
 					if (object.layout.props.removedFields.length > 1) {
@@ -1223,8 +1223,8 @@ define([
 					}
 				}
 
-				// Remove field sub-items. Keep 1 remaining field in the table
-				if (object.layout.props.removedFields.length < (selectedTable.qData.qFields.length - 1)) {
+				// Remove field sub-items. Keep 1 remaining field in the table. Require cell context
+				if (cell && object.layout.props.removedFields.length < (selectedTable.qData.qFields.length - 1)) {
 
 					// Context: Top level item: Remove this field
 					if (column.isDimension) {
@@ -1356,9 +1356,9 @@ define([
 						});
 					}
 				});
-
-			// Add selectable tables
 			} else {
+
+				// Add selectable tables
 				if (tables.length > 4) {
 					var selectTableMenu = menu.addItem({
 						label: "Select table",
