@@ -1,10 +1,9 @@
 /**
  * E-mergo UI Utility library
  *
- * @version 20200124
+ * @version 20230304
  *
  * @package E-mergo
- * @subpackage E-mergo Table Inspector
  *
  * @param  {Object} qlik                Qlik's core API
  * @param  {Object} qvangular           Qlik's Angular implementation
@@ -79,7 +78,9 @@ define([
 			alignTo: function() { return ""; },
 			closeOnEscape: true,
 			outsideIgnore: false,
-			dock: "right"
+			dock: "right",
+			ajaxSearch: $q.resolve(false),
+			ajaxSearchMaxQueried: 1000
 		});
 
 		/**
@@ -110,6 +111,7 @@ define([
 				controller: ["$scope", function( $scope ) {
 					$scope.title = options.title;
 					$scope.search = {
+						ajax: false,
 						term: ""
 					};
 
@@ -156,21 +158,31 @@ define([
 								items = arrayUtil.limit(items, ITEM_LIMIT);
 							}
 
-
 							$scope.items = items;
 						}
 
-						if (! cache) {
-							options.get( function( items ) {
-								cache = {
-									items: items
-								};
+						// Handle dynamic search
+						options.ajaxSearch.then( function( applyAjaxSearch ) {
+							if (applyAjaxSearch) {
+								$scope.search.ajax = true;
+							}
 
+							// Query items when the cache is not set yet or when dynamic searching is enabled,
+							// either the current search result exceeds the query maximum or the search term is renewed
+							if (! cache || (applyAjaxSearch && (cache.count > options.ajaxSearchMaxQueried || 0 !== term.indexOf(cache.term)))) {
+								options.get( function( items, numQueried ) {
+									cache = {
+										items: items,
+										count: numQueried || items.length,
+										term: term
+									};
+
+									setItems();
+								}, $scope.search);
+							} else {
 								setItems();
-							});
-						} else {
-							setItems();
-						}
+							}
+						});
 					});
 				}],
 				alignTo: options.alignTo(),
