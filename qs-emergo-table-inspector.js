@@ -42,7 +42,11 @@ define([
 	// Add global styles to the page
 	util.registerStyle("qs-emergo-table-inspector", css);
 
-	// Get current app
+	/**
+	 * Holds the reference to the current app's API
+	 *
+	 * @type {Object}
+	 */
 	var app = qlik.currApp(),
 
 	/**
@@ -1078,6 +1082,23 @@ define([
 	},
 
 	/**
+	 * Holds the list of available measures
+	 *
+	 * @type {Array}
+	 */
+	measureList = [
+		"Sum($1)",
+		"Count($1)",
+		"Count(Distinct $1)",
+		"Avg($1)",
+		"Max($1)",
+		"Min($1)",
+		"Concat(Distinct $1, ', ')",
+		"MaxString($1)",
+		"MinString($1)"
+	],
+
+	/**
 	 * Modify the extension's context menu
 	 *
 	 * @param  {Object} object Extension object
@@ -1109,6 +1130,30 @@ define([
 				select: function() {
 					selectTable($scope, a);
 				}
+			});
+		},
+
+		/**
+		 * Add a new measure menu item to the provided menu
+		 *
+		 * @param  {Object} menu Menu to add to
+		 * @param  {Object} table Table context
+		 * @param  {Object} fieldName Field name
+		 * @param  {Object} colIndex Optional. Column index
+		 * @return {Void}
+		 */
+		addMeasureMenuItems = function( menu, table, fieldName, colIndex ) {
+			measureList.forEach( function( aggregation, ix ) {
+				menu.addItem({
+					label: aggregation.replace("$1", qUtil.escapeField(fieldName)),
+					tid: "add-measure-".concat(fieldName, "-", ix),
+					select: function() {
+						addTableMeasure($scope, table, {
+							aggregation: aggregation,
+							field: fieldName
+						}, colIndex);
+					}
+				});
 			});
 		};
 
@@ -1289,39 +1334,31 @@ define([
 				// }
 
 				// Add measure with sub-items
-				if (column.isDimension) {
+				if (! column.isMeasure) {
 					addMeasureMenu = menu.addItem({
 						label: "Add measure",
 						tid: "add-measure",
 						icon: "lui-icon lui-icon--bar-chart"
 					});
 
-					// Register available measures
-					[
-						"Sum($1)",
-						"Count($1)",
-						"Count(Distinct $1)",
-						"Avg($1)",
-						"Max($1)",
-						"Min($1)",
-						"Concat(Distinct $1, ', ')",
-						"MaxString($1)",
-						"MinString($1)"
-					].forEach( function( aggregation, ix ) {
-						addMeasureMenu.addItem({
-							label: aggregation.replace("$1", qUtil.escapeField(column.fieldName)),
-							tid: "add-measure-".concat(ix),
-							select: function() {
-								addTableMeasure($scope, selectedTable, {
-									aggregation: aggregation,
-									field: column.fieldName
-								}, cell.colIx);
-							}
+					// Single field
+					if (column.isDimension) {
+						addMeasureMenuItems(addMeasureMenu, selectedTable, column.fieldName, cell.colIx);
+
+					// All fields
+					} else {
+						selectedTable.qData.qFields.forEach( function( a ) {
+							var addMeasureFieldMenu = addMeasureMenu.addItem({
+								label: a.qName,
+								tid: "add-measure-".concat(a.qName)
+							});
+
+							addMeasureMenuItems(addMeasureFieldMenu, selectedTable, a.qName);
 						});
-					});
+					}
 
 				// Remove measure
-				} else if (column.isMeasure) {
+				} else {
 					menu.addItem({
 						label: "Remove measure",
 						tid: "remove-measure",
