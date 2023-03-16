@@ -11,13 +11,20 @@ define([
 ], function( util, qext ) {
 
 	/**
+	 * Holds the QEXT data
+	 *
+	 * @type {Object}
+	 */
+	var qext = JSON.parse(qext),
+
+	/**
 	 * Holds the settings definition of the about sub-panel
 	 *
 	 * @type {Object}
 	 */
-	var about = {
+	about = {
 		label: function() {
-			return "About " + JSON.parse(qext).title;
+			return "About ".concat(qext.title);
 		},
 		type: "items",
 		items: {
@@ -27,7 +34,7 @@ define([
 			},
 			version: {
 				label: function() {
-					return "Version: " + JSON.parse(qext).version;
+					return "Version: ".concat(qext.version);
 				},
 				component: "text"
 			},
