@@ -1162,23 +1162,63 @@ define([
 
 			// When the embedded visualization is active
 			if ($scope.vizId) {
-				var switchTableMenu, addFieldMenu, removeFieldMenu,
 
-				// Find the cell's scope
+				/**
+				 * Holds the Switch table menu
+				 *
+				 * @type {Object}
+				 */
+				var switchTableMenu,
+
+				/**
+				 * Holds the Add field menu
+				 *
+				 * @type {Object}
+				 */
+				addFieldMenu,
+
+				/**
+				 * Holds the Remove field menu
+				 *
+				 * @type {Object}
+				 */
+				removeFieldMenu,
+
+				/**
+				 * Holds the removed fields
+				 *
+				 * @type {Array}
+				 */
+				removedFields = object.layout.props.removedFields,
+
+				/**
+				 * Holds the cell's scope
+				 *
+				 * @type {Object}
+				 */
 				$cellScope = getTableCellScope($event.target) || {},
 
-				// Find the cell's cell data
+				/**
+				 * Holds the cell's cell data
+				 *
+				 * @type {Object}
+				 */
 				cell = $cellScope.cell || $cellScope.header,
 
-				// Find the cell's column data
+				/**
+				 * Holds the cell's column data
+				 *
+				 * @type {Object}
+				 */
 				column = cell ? $cellScope.$parent.$parent.grid.headerList.rows[0].cells.find( function( a ) {
 					return a.dataColIx === cell.dataColIx;
 				}) : {},
 
-				// Find the table's visualization scope. Header cells have an extra parent level
-				$vizScope = $cellScope.header ? $cellScope.$parent.$parent.$parent.$parent.$parent : ($cellScope.cell ? $cellScope.$parent.$parent.$parent.$parent : false),
-
-				// Find the selected table
+				/**
+				 * Holds the selected table
+				 *
+				 * @type {Object}
+				 */
 				selectedTable = tables.find( function( a ) {
 					return a.value === object.layout.props.tableName;
 				});
@@ -1212,7 +1252,10 @@ define([
 					icon: "lui-icon lui-icon--table"
 				});
 
+				// Each single table
 				tables.forEach( function( a ) {
+
+					// Reload the current table
 					if (a.value === selectedTable.value) {
 						switchTableMenu.addItem({
 							label: a.value,
@@ -1222,22 +1265,25 @@ define([
 								reloadEmbeddedViz($scope);
 							}
 						});
+
+					// Switch to other table
 					} else {
 						addTableMenuItem(switchTableMenu, a);
 					}
 				});
 
-				// Add field sub-items. Require cell context
-				if (cell && object.layout.props.removedFields.length) {
+				// Add fields
+				if (removedFields.length) {
 
-					// Create submenu when multiple fields are removed
-					if (object.layout.props.removedFields.length > 1) {
+					// Multiple fields are removed
+					if (removedFields.length > 1) {
 						addFieldMenu = menu.addItem({
 							label: "Add field",
 							tid: "add-field",
 							icon: "lui-icon lui-icon--paste"
 						});
 
+						// All fields
 						addFieldMenu.addItem({
 							label: "Add all fields",
 							tid: "add-all-fields",
@@ -1246,8 +1292,9 @@ define([
 							}
 						});
 
+						// Each single field
 						selectedTable.qData.qFields.filter( function( a ) {
-							return -1 !== object.layout.props.removedFields.indexOf(a.qName);
+							return -1 !== removedFields.indexOf(a.qName);
 						}).forEach( function( a ) {
 							addFieldMenu.addItem({
 								label: a.qName,
@@ -1257,22 +1304,40 @@ define([
 								}
 							});
 						});
+
+					// Add single field
 					} else {
 						menu.addItem({
-							label: "Add field '".concat(object.layout.props.removedFields[0], "'"),
+							label: "Add field '".concat(removedFields[0], "'"),
 							tid: "add-field",
 							icon: "lui-icon lui-icon--paste",
 							select: function() {
-								addTableField($scope, selectedTable, object.layout.props.removedFields[0], cell.colIx);
+								addTableField($scope, selectedTable, removedFields[0], cell.colIx);
 							}
 						});
 					}
 				}
 
-				// Remove field sub-items. Keep 1 remaining field in the table. Require cell context
-				if (cell && object.layout.props.removedFields.length < (selectedTable.qData.qFields.length - 1)) {
+				// Remove fields. Always keep 1 field in the table
+				if (removedFields.length < (selectedTable.qData.qFields.length - 1)) {
+					removeFieldMenu = menu.addItem({
+						label: "Remove field",
+						tid: "remove-field",
+						icon: "lui-icon lui-icon--cut"
+					});
 
-					// Context: Top level item: Remove this field
+					// Remove all other fields
+					if (column.isDimension) {
+						removeFieldMenu.addItem({
+							label: "Remove all but '".concat(column.fieldName, "'"),
+							tid: "remove-other-fields",
+							select: function() {
+								removeOtherTableFields($scope, selectedTable, column.fieldName);
+							}
+						});
+					}
+
+					// Remove this field
 					if (column.isDimension) {
 						menu.addItem({
 							label: "Remove field '".concat(column.fieldName, "'"),
@@ -1284,35 +1349,15 @@ define([
 						});
 					}
 
-					removeFieldMenu = menu.addItem({
-						label: "Remove field",
-						tid: "remove-field",
-						icon: "lui-icon lui-icon--cut"
-					});
-
-					// Context: Sub level item: Remove all other fields
-					if (column.isDimension) {
-						removeFieldMenu.addItem({
-							label: "Remove all but '".concat(column.fieldName, "'"),
-							tid: "remove-other-fields",
-							select: function() {
-								removeOtherTableFields($scope, selectedTable, column.fieldName);
-							}
-						});
-					}
-
-					// Add remove-field for all fields in the hypercube
-					$vizScope.layout.qHyperCube.qDimensionInfo.map( function( a, ix ) {
-						a.$index = ix;
-						return a;
-					}).sort( function( a, b ) {
-						return $vizScope.layout.qHyperCube.qColumnOrder.indexOf(a.$index) - $vizScope.layout.qHyperCube.qColumnOrder.indexOf(b.$index);
+					// Each single field
+					selectedTable.qData.qFields.filter( function( a ) {
+						return -1 === removedFields.indexOf(a.qName);
 					}).forEach( function( a ) {
 						removeFieldMenu.addItem({
-							label: a.qFallbackTitle,
-							tid: "remove-field-".concat(a.$index),
+							label: a.qName,
+							tid: "remove-field-".concat(a.qName),
 							select: function() {
-								removeTableField($scope, selectedTable, a.qFallbackTitle);
+								removeTableField($scope, selectedTable, a.qName);
 							}
 						});
 					});
@@ -1333,7 +1378,7 @@ define([
 				// 	});
 				// }
 
-				// Add measure with sub-items
+				// Add measure
 				if (! column.isMeasure) {
 					addMeasureMenu = menu.addItem({
 						label: "Add measure",
@@ -1341,11 +1386,11 @@ define([
 						icon: "lui-icon lui-icon--bar-chart"
 					});
 
-					// Single field
+					// Add single field measures
 					if (column.isDimension) {
 						addMeasureMenuItems(addMeasureMenu, selectedTable, column.fieldName, cell.colIx);
 
-					// All fields
+					// Add all field measures
 					} else {
 						selectedTable.qData.qFields.forEach( function( a ) {
 							var addMeasureFieldMenu = addMeasureMenu.addItem({
