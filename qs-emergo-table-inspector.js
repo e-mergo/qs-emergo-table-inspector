@@ -576,7 +576,7 @@ define([
 	 * @param  {Object} $scope Extension scope
 	 * @param  {Object} tableData Table data
 	 * @param  {String} fieldName Field name
-	 * @param  {String} position Optional. Position where to insert the field.
+	 * @param  {Number} position Optional. Position where to insert the field.
 	 * @return {Promise} Field is added
 	 */
 	addTableField = function( $scope, tableData, fieldName, position ) {
@@ -634,7 +634,7 @@ define([
 	 *
 	 * @param  {Object} $scope Extension scope
 	 * @param  {Object} tableData Table data
-	 * @param  {String} position Optional. Position where to insert the field.
+	 * @param  {Number} position Optional. Position where to insert the field.
 	 * @return {Promise} Fields are added
 	 */
 	addAllTableFields = function( $scope, tableData, position ) {
@@ -716,7 +716,7 @@ define([
 			},
 
 			// Find field in hypercube
-			ix = newProps.qHyperCubeDef.qDimensions.findIndex(function( a ) {
+			ix = newProps.qHyperCubeDef.qDimensions.findIndex( function( a ) {
 				return a.qDef.qFieldDefs[0] === fieldName;
 			});
 
@@ -747,38 +747,88 @@ define([
 	 * @param  {Object} $scope Extension scope
 	 * @param  {Object} tableData Table data
 	 * @param  {String} fieldName Field name
+	 * @param  {Number} position Optional. Required when removing with direction
+	 * @param  {Number} direction Optional. Removal direction, -1 for left, 1 for right
 	 * @return {Promise} Fields are hidden
 	 */
-	removeOtherTableFields = function( $scope, tableData, fieldName ) {
-
-		// Add all other fields to the table's hidden fields list
-		$scope.removedFields = _.difference(_.uniq($scope.removedFields.concat(_.pluck(tableData.qData.qFields, "qName"))), [fieldName]);
+	removeOtherTableFields = function( $scope, tableData, fieldName, position, direction ) {
+		direction = direction || 0;
 
 		// Get the embedded visualization's properties
 		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
-			var newProps = {
+			var ix, fieldIndicesToRemove, newDims, newProps;
+
+			// Remove with direction
+			if (direction) {
+
+				// Find field in hypercube
+				ix = props.qHyperCubeDef.qColumnOrder.find( function( a, ix ) {
+					return ix === position;
+				});
+
+				// Get field indices to remove
+				fieldIndicesToRemove = (direction > 0 ? props.qHyperCubeDef.qColumnOrder.slice(position + 1) : props.qHyperCubeDef.qColumnOrder.slice(0, position)).filter( function( a ) {
+					return a < props.qHyperCubeDef.qDimensions.length;
+				});
+
+				// Remove fields from the dimension list
+				newDims = props.qHyperCubeDef.qDimensions.filter( function( a, ix ) {
+					return -1 === fieldIndicesToRemove.indexOf(ix);
+				});
+
+				// Add left/right fields to the table's hidden fields list
+				$scope.removedFields = _.uniq($scope.removedFields.concat(props.qHyperCubeDef.qDimensions.filter( function( a, ix ) {
+					return -1 !== fieldIndicesToRemove.indexOf(ix);
+				}).map( function( a ) {
+					return a.qDef.qFieldDefs[0];
+				})));
+
+			// Remove all other fields
+			} else {
+
+				// Find field in hypercube
+				ix = props.qHyperCubeDef.qDimensions.findIndex( function( a ) {
+					return a.qDef.qFieldDefs[0] === fieldName;
+				});
+
+				// Get field indices to remove
+				fieldIndicesToRemove = props.qHyperCubeDef.qDimensions.map( function( a, ix ) {
+					return ix;
+				}).filter( function( a ) {
+					return a !== ix;
+				});
+
+				// Keep the field from the dimension list
+				newDims = props.qHyperCubeDef.qDimensions.splice(ix, 1)
+
+				// Add all other fields to the table's hidden fields list
+				$scope.removedFields = _.difference(_.uniq($scope.removedFields.concat(_.pluck(tableData.qData.qFields, "qName"))), [fieldName]);
+			}
+
+			// Define new table properties
+			newProps = {
 				qHyperCubeDef: props.qHyperCubeDef,
 				props: {
 					tableName: tableData.value,
 					removedFields: $scope.removedFields,
 					addedMeasures: $scope.addedMeasures
 				}
-			},
-
-			// Find field in hypercube
-			ix = newProps.qHyperCubeDef.qDimensions.findIndex(function( a ) {
-				return a.qDef.qFieldDefs[0] === fieldName;
-			});
+			};
 
 			// Field is found
 			if (-1 !== ix) {
 
-				// Keep the field from the dimension list
-				newProps.qHyperCubeDef.qDimensions = newProps.qHyperCubeDef.qDimensions.splice(ix, 1);
+				// Set the new dimension list
+				newProps.qHyperCubeDef.qDimensions = newDims;
 
-				// Remove the other fields from ordering and sorting lists
-				newProps.qHyperCubeDef.qColumnOrder = [0];
-				newProps.qHyperCubeDef.qInterColumnSortOrder = [0];
+				// Remove the field from ordering and sorting lists
+				["qColumnOrder", "qInterColumnSortOrder"].forEach( function( a ) {
+					newProps.qHyperCubeDef[a] = newProps.qHyperCubeDef[a].filter( function( b ) {
+						return -1 === fieldIndicesToRemove.indexOf(b);
+					}).map( function( b ) {
+						return b - fieldIndicesToRemove.filter(a => a < b).length;
+					});
+				});
 
 				// Update props on the table and extension
 				return updateEmbeddedVizAndExtension($scope, newProps);
@@ -792,7 +842,7 @@ define([
 	 * @param  {Object} $scope Extension scope
 	 * @param  {Object} tableData Table data
 	 * @param  {Object} measure Measure details
-	 * @param  {String} position Optional. Position where to insert the measure.
+	 * @param  {Number} position Optional. Position where to insert the measure.
 	 * @return {Promise} Measure is added
 	 */
 	addTableMeasure = function( $scope, tableData, measure, position ) {
@@ -847,7 +897,7 @@ define([
 	 *
 	 * @param  {Object} $scope Extension scope
 	 * @param  {Object} tableData Table data
-	 * @param  {String} position Position at which to remove the measure
+	 * @param  {Number} position Position at which to remove the measure
 	 * @return {Promise} Measure is removed
 	 */
 	removeTableMeasure = function( $scope, tableData, position ) {
@@ -1185,6 +1235,13 @@ define([
 				removeFieldMenu,
 
 				/**
+				 * Holds the Add measure menu
+				 *
+				 * @type {Object}
+				 */
+				addMeasureMenu,
+
+				/**
 				 * Holds the removed fields
 				 *
 				 * @type {Array}
@@ -1203,16 +1260,30 @@ define([
 				 *
 				 * @type {Object}
 				 */
-				cell = $cellScope.cell || $cellScope.header,
+				cell = $cellScope.cell || $cellScope.header || {},
+
+				/**
+				 * Holds the list of table columns
+				 *
+				 * Column indices are corrected for non-data columns.
+				 *
+				 * @type {Array}
+				 */
+				columns = $cellScope.grid ? $cellScope.grid.headerRows[0].cells.filter( function( a ) {
+					return (a.isDimension || a.isMeasure) && ! a.isSearchIcon;
+				}).map( function( a, ix ) {
+					a.colIx = ix;
+					return a;
+				}) : [],
 
 				/**
 				 * Holds the cell's column data
 				 *
 				 * @type {Object}
 				 */
-				column = cell ? $cellScope.$parent.$parent.grid.headerList.rows[0].cells.find( function( a ) {
+				column = columns.length ? columns.find( function( a ) {
 					return a.dataColIx === cell.dataColIx;
-				}) : {},
+				}) || {} : {},
 
 				/**
 				 * Holds the selected table
@@ -1224,7 +1295,7 @@ define([
 				});
 
 				// Copy cell value
-				if (cell && !! cell.text) {
+				if (cell.text) {
 					menu.addItem({
 						translation: "contextMenu.copyCellValue",
 						tid: "copy-cell-context-item",
@@ -1320,6 +1391,21 @@ define([
 
 				// Remove fields. Always keep 1 field in the table
 				if (removedFields.length < (selectedTable.qData.qFields.length - 1)) {
+
+					// The maximum dimension column index
+					var maxDimColIx = columns.filter( function( a ) {
+						return a.isDimension;
+					}).reduce( function( max, a ) {
+						return a.colIx > max ? a.colIx : max;
+					}, 0);
+
+					// The minimum dimension column index
+					minDimColIx = columns.filter( function( a ) {
+						return a.isDimension;
+					}).reduce( function( min, a ) {
+						return a.colIx < min ? a.colIx : min;
+					}, maxDimColIx);
+
 					removeFieldMenu = menu.addItem({
 						label: "Remove field",
 						tid: "remove-field",
@@ -1333,6 +1419,28 @@ define([
 							tid: "remove-other-fields",
 							select: function() {
 								removeOtherTableFields($scope, selectedTable, column.fieldName);
+							}
+						});
+					}
+
+					// Remove left fields, but not all fields
+					if (cell.colIx > minDimColIx && ! (column.isMeasure && cell.colIx > maxDimColIx)) {
+						removeFieldMenu.addItem({
+							label: "Remove all fields to the left",
+							tid: "remove-left-fields",
+							select: function() {
+								removeOtherTableFields($scope, selectedTable, column.fieldName, cell.colIx, -1);
+							}
+						});
+					}
+
+					// Remove right fields, but not all fields
+					if (cell.colIx < maxDimColIx && ! (column.isMeasure && cell.colIx < minDimColIx)) {
+						removeFieldMenu.addItem({
+							label: "Remove all fields to the right",
+							tid: "remove-right-fields",
+							select: function() {
+								removeOtherTableFields($scope, selectedTable, column.fieldName, cell.colIx, 1);
 							}
 						});
 					}
