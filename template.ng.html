@@ -18,6 +18,12 @@
 					<button class="lui-button open-edit-mode" qva-activate="switchToAnalysis()">Analysis mode</button>
 				</span>
 			</p>
+
+			<p ng-if="object.inEditState() && vizId" class="incomplete-text">
+				<span>or
+					<button class="lui-button convert-to-table" qva-activate="convertToTable()" q-translation="contextMenu.convertTo, Table"></button>
+				</span>
+			</p>
 		</div>
 	</div>
 </div>

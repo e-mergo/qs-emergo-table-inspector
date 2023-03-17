@@ -262,7 +262,7 @@ define([
 		// Define patches from props
 		patches = patcher(props);
 
-		// Get the extension's object model
+		// Save changes to the extension's object model
 		return $scope.object.model.applyPatches(patches);
 	},
 
@@ -568,6 +568,57 @@ define([
 
 			return selectTable($scope, tableData);
 		});
+	},
+
+	/**
+	 * Convert the extension to the embedded visualization
+	 *
+	 * The embedded visualization's object is not removed in order to
+	 * keep the option to use the undo functionality in the app.
+	 *
+	 * Actual convert logic does exist in the extension context object,
+	 * but it is not documented and parameters are unclear:
+	 *
+	 * $scope.ext._convert(
+	 *     visualizations.getType("table"), // How to?
+	 *     "table",
+	 *     builder.item // How to?
+	 * );
+	 *
+	 * @param  {Object} $scope Extension scope
+	 * @return {Promise} Extension is converted
+	 */
+	convertExtensionToEmbeddedViz = function( $scope ) {
+
+		// Get the embedded visualization's properties
+		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
+
+			// Populate dimension column id values
+			props.qHyperCubeDef.qDimensions = props.qHyperCubeDef.qDimensions.map( function( a ) {
+				a.qDef.cId = qUtil.generateId();
+				return a;
+			});
+
+			// Populate measure column id values
+			props.qHyperCubeDef.qMeasures = props.qHyperCubeDef.qMeasures.map( function( a ) {
+				a.qDef.cId = qUtil.generateId();
+				return a;
+			});
+
+			// Remove inspector properties
+			delete props.props;
+
+			// Reset metadata
+			props.showTitles = true;
+			props.title = "";
+			props.subtitle = "";
+
+			// Keep the extension's object id
+			props.qInfo.qId = $scope.object.model.id;
+
+			// Fully overwrite the extension's properties
+			return $scope.object.model.setProperties(props);
+		}).catch(console.error);
 	},
 
 	/**
@@ -1091,6 +1142,15 @@ define([
 		};
 
 		/**
+		 * Convert extension to table
+		 *
+		 * @return {Void}
+		 */
+		$scope.convertToTable = function() {
+			convertExtensionToEmbeddedViz($scope);
+		};
+
+		/**
 		 * Button select handler
 		 *
 		 * @return {Void}
@@ -1157,12 +1217,6 @@ define([
 	 * @return {Void}
 	 */
 	getContextMenu = function( object, menu, $event ) {
-
-		// Bail when we're in Edit mode
-		if (object.inEditState()) {
-			return;
-		}
-
 		var $scope = getExtensionScopeFromElement($event.target),
 
 		/**
@@ -1206,6 +1260,27 @@ define([
 				});
 			});
 		};
+
+		// When we're in Edit mode
+		if (object.inEditState()) {
+
+			// When the embedded visualization is active
+			if ($scope.vizId) {
+
+				// Convert to table
+				menu.addItem({
+					translation: ["contextMenu.convertTo", "Table"],
+					tid: "convert-to-table",
+					icon: "lui-icon lui-icon--table",
+					select: function() {
+						convertExtensionToEmbeddedViz($scope);
+					}
+				});
+			}
+
+			// Bail when done
+			return;
+		}
 
 		// Query tables, then add menu items
 		getAppTables().then( function( tables ) {
@@ -1471,21 +1546,6 @@ define([
 					});
 				}
 
-				// // Convert to regular table when user can edit
-				// if (qlik.navigation.isModeAllowed(qlik.navigation.EDIT)) {
-				// 	menu.addItem({
-				// 		translation: ["contextMenu.convertTo", "Table"],
-				// 		tid: "convert",
-				// 		select: function() {
-				// 			$scope.ext._convert(
-				// 				visualizations.getType("table"), // How to?
-				// 				"table",
-				// 				builder.item // How to?
-				// 			);
-				// 		}
-				// 	});
-				// }
-
 				// Add measure
 				if (! column.isMeasure) {
 					addMeasureMenu = menu.addItem({
@@ -1633,7 +1693,6 @@ define([
 		retval.properties.showTitles = true;
 		retval.properties.title = "";
 		retval.properties.subtitle = "";
-		retval.properties.totals = { show: true };
 
 		return retval;
 	};
