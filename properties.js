@@ -2,13 +2,17 @@
  * E-mergo Table Inspector Property Panel definition
  *
  * @param  {Object} util          E-mergo utility functions
+ * @param  {Object} docs          E-mergo documentation functions
+ * @param  {String} readme        Extension readme
  * @param  {String} qext          Extension QEXT data
  * @return {Object}               Extension Property Panel definition
  */
 define([
 	"./util/util",
+	"./docs/docs",
+	"text!./README.md",
 	"text!./qs-emergo-table-inspector.qext"
-], function( util, qext ) {
+], function( util, docs, readme, qext ) {
 
 	/**
 	 * Holds the QEXT data
@@ -47,7 +51,7 @@ define([
 				component: "button",
 				action: function() {
 					util.requireMarkdownMimetype().finally( function() {
-						window.open(window.requirejs.toUrl("extensions/qs-emergo-table-inspector/docs/docs.html"), "_blank");
+						docs.showModal(readme, qext);
 					});
 				}
 			}
