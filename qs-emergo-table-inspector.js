@@ -1196,17 +1196,52 @@ define([
 	 *
 	 * @type {Array}
 	 */
-	measureList = [
-		"Sum($1)",
-		"Count($1)",
-		"Count(Distinct $1)",
-		"Avg($1)",
-		"Max($1)",
-		"Min($1)",
-		"Concat(Distinct $1, ', ')",
-		"MaxString($1)",
-		"MinString($1)"
-	],
+	measureList = {
+		basicAggregration: {
+			label: "Basic aggregation",
+			options: [
+				"Max($1)",
+				"Min($1)",
+				"Mode($1)",
+				"Only($1)",
+				"Sum($1)"
+			],
+		},
+		counterAggegration: {
+			label: "Counter aggregation",
+			options: [
+				"Count($1)",
+				"Count(Distinct $1)",
+				"MissingCount($1)",
+				"MissingCount(Distinct $1)",
+				"NullCount($1)",
+				"NullCount(Distinct $1)",
+				"NumericCount($1)",
+				"NumericCount(Distinct $1)",
+				"TextCount($1)",
+				"TextCount(Distinct $1)"
+			],
+		},
+		statisticalAggegration: {
+			label: "Statistical aggregation",
+			options: [
+				"Avg($1)",
+				"Kurtosis($1)",
+				"Median($1)",
+				"Skew($1)",
+				"Stdev($1)",
+				"Sterr($1)"
+			],
+		},
+		stringAggegration: {
+			label: "String aggregation",
+			options: [
+				"Concat(Distinct $1, ', ')",
+				"MaxString($1)",
+				"MinString($1)"
+			],
+		}
+	},
 
 	/**
 	 * Modify the extension's context menu
@@ -1247,18 +1282,32 @@ define([
 		 * @return {Void}
 		 */
 		addMeasureMenuItems = function( menu, table, fieldName, colIndex ) {
-			measureList.forEach( function( aggregation, ix ) {
-				menu.addItem({
-					label: aggregation.replace("$1", qUtil.escapeField(fieldName)),
-					tid: "add-measure-".concat(fieldName, "-", ix),
-					select: function() {
-						addTableMeasure($scope, table, {
-							aggregation: aggregation,
-							field: fieldName
-						}, colIndex);
-					}
-				});
-			});
+			var i, j, mmenu;
+
+			for (i in measureList) {
+				if (measureList.hasOwnProperty(i)) {
+
+					// Add aggregation type menu
+					mmenu = menu.addItem({
+						label: measureList[i].label,
+						tid: i
+					});
+
+					// Add aggregation options
+					measureList[i].options.forEach( function( aggregation, ix ) {
+						mmenu.addItem({
+							label: aggregation.replace("$1", qUtil.escapeField(fieldName)),
+							tid: "add-measure-".concat(fieldName, "-", ix),
+							select: function() {
+								addTableMeasure($scope, table, {
+									aggregation: aggregation,
+									field: fieldName
+								}, colIndex);
+							}
+						});
+					});
+				}
+			}
 		};
 
 		// When we're in Edit mode
