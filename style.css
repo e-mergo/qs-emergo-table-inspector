@@ -54,9 +54,12 @@
 	width: 150px;
 }
 
+.qs-emergo-table-inspector .requirements .incomplete-text .lui-button {
+	margin: 6px auto;
+}
+
 .qs-emergo-table-inspector .convert-to-table {
 	display: block;
-	margin: auto;
 }
 
 /* Card-based themes */
