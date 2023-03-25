@@ -1244,6 +1244,17 @@ define([
 	},
 
 	/**
+	 * Holds the list of available quick measures
+	 *
+	 * @type {Array}
+	 */
+	quickMeasureList = [
+		"Sum($1)",
+		"Count($1)",
+		"Count(Distinct $1)"
+	],
+
+	/**
 	 * Modify the extension's context menu
 	 *
 	 * @param  {Object} object Extension object
@@ -1289,6 +1300,20 @@ define([
 		addMeasureMenuItems = function( menu, table, fieldName, colIndex ) {
 			var i, j, mmenu;
 
+			// Add quick measures
+			quickMeasureList.forEach( function( aggregation, ix ) {
+				menu.addItem({
+					label: aggregation.replace("$1", qUtil.escapeField(fieldName)),
+					tid: "add-measure-quick-".concat(ix),
+					select: function() {
+						addTableMeasure($scope, table, {
+							aggregation: aggregation,
+							field: fieldName
+						}, colIndex);
+					}
+				});
+			});
+
 			for (i in measureList) {
 				if (measureList.hasOwnProperty(i)) {
 
@@ -1302,7 +1327,7 @@ define([
 					measureList[i].options.forEach( function( aggregation, ix ) {
 						mmenu.addItem({
 							label: aggregation.replace("$1", qUtil.escapeField(fieldName)),
-							tid: "add-measure-".concat(fieldName, "-", ix),
+							tid: "add-measure-".concat(i.toLowerCase(), "-", ix),
 							select: function() {
 								addTableMeasure($scope, table, {
 									aggregation: aggregation,
