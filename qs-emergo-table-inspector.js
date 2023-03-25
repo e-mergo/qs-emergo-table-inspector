@@ -1252,6 +1252,11 @@ define([
 	 * @return {Void}
 	 */
 	getContextMenu = function( object, menu, $event ) {
+		/**
+		 * Holds the extension's scope object
+		 *
+		 * @type {Object}
+		 */
 		var $scope = getExtensionScopeFromElement($event.target),
 
 		/**
@@ -1352,11 +1357,18 @@ define([
 				addFieldMenu,
 
 				/**
-				 * Holds the Remove field menu
+				 * Holds the Remove column menu
 				 *
 				 * @type {Object}
 				 */
-				removeFieldMenu,
+				removeColumnMenu,
+
+				/**
+				 * Holds the menu items for the Remove column menu
+				 *
+				 * @type {Array}
+				 */
+				removeColumnMenuItems = [],
 
 				/**
 				 * Holds the Add measure menu
@@ -1366,11 +1378,27 @@ define([
 				addMeasureMenu,
 
 				/**
+				 * Holds the selected table
+				 *
+				 * @type {Object}
+				 */
+				selectedTable = tables.find( function( a ) {
+					return a.value === object.layout.props.tableName;
+				}),
+
+				/**
 				 * Holds the removed fields
 				 *
 				 * @type {Array}
 				 */
 				removedFields = object.layout.props.removedFields,
+
+				/**
+				 * Holds whether the table has removable fields
+				 *
+				 * @type {Boolean}
+				 */
+				hasRemovableFields = removedFields.length < (selectedTable.qData.qFields.length - 1),
 
 				/**
 				 * Holds the cell's scope
@@ -1407,16 +1435,7 @@ define([
 				 */
 				column = columns.length ? columns.find( function( a ) {
 					return a.dataColIx === cell.dataColIx;
-				}) || {} : {},
-
-				/**
-				 * Holds the selected table
-				 *
-				 * @type {Object}
-				 */
-				selectedTable = tables.find( function( a ) {
-					return a.value === object.layout.props.tableName;
-				});
+				}) || {} : {};
 
 				// Copy cell value
 				if (cell.text) {
@@ -1514,7 +1533,7 @@ define([
 				}
 
 				// Remove fields. Always keep 1 field in the table
-				if (removedFields.length < (selectedTable.qData.qFields.length - 1)) {
+				if (hasRemovableFields) {
 
 					// The maximum dimension column index
 					var maxDimColIx = columns.filter( function( a ) {
@@ -1530,16 +1549,10 @@ define([
 						return a.colIx < min ? a.colIx : min;
 					}, maxDimColIx);
 
-					removeFieldMenu = menu.addItem({
-						label: "Remove field",
-						tid: "remove-field",
-						icon: "lui-icon lui-icon--cut"
-					});
-
 					// Remove all other fields
 					if (column.isDimension) {
-						removeFieldMenu.addItem({
-							label: "Remove all but '".concat(column.fieldName, "'"),
+						removeColumnMenuItems.push({
+							label: "Remove all columns but '".concat(column.fieldName, "'"),
 							tid: "remove-other-fields",
 							select: function() {
 								removeOtherTableFields($scope, selectedTable, column.fieldName);
@@ -1549,9 +1562,9 @@ define([
 
 					// Remove left fields, but not all fields
 					if (cell.colIx > minDimColIx && ! (column.isMeasure && cell.colIx > maxDimColIx)) {
-						removeFieldMenu.addItem({
-							label: "Remove all fields to the left",
-							tid: "remove-left-fields",
+						removeColumnMenuItems.push({
+							label: "Remove all columns to the left",
+							tid: "remove-left-columns",
 							select: function() {
 								removeOtherTableFields($scope, selectedTable, column.fieldName, cell.colIx, -1);
 							}
@@ -1560,39 +1573,14 @@ define([
 
 					// Remove right fields, but not all fields
 					if (cell.colIx < maxDimColIx && ! (column.isMeasure && cell.colIx < minDimColIx)) {
-						removeFieldMenu.addItem({
-							label: "Remove all fields to the right",
-							tid: "remove-right-fields",
+						removeColumnMenuItems.push({
+							label: "Remove all columns to the right",
+							tid: "remove-right-columns",
 							select: function() {
 								removeOtherTableFields($scope, selectedTable, column.fieldName, cell.colIx, 1);
 							}
 						});
 					}
-
-					// Remove this field
-					if (column.isDimension) {
-						menu.addItem({
-							label: "Remove field '".concat(column.fieldName, "'"),
-							tid: "remove-this-field",
-							icon: "lui-icon lui-icon--cut",
-							select: function() {
-								removeTableField($scope, selectedTable, column.fieldName);
-							}
-						});
-					}
-
-					// Each single field
-					selectedTable.qData.qFields.filter( function( a ) {
-						return -1 === removedFields.indexOf(a.qName);
-					}).forEach( function( a ) {
-						removeFieldMenu.addItem({
-							label: a.qName,
-							tid: "remove-field-".concat(a.qName),
-							select: function() {
-								removeTableField($scope, selectedTable, a.qName);
-							}
-						});
-					});
 				}
 
 				// Add measure
@@ -1618,27 +1606,67 @@ define([
 							addMeasureMenuItems(addMeasureFieldMenu, selectedTable, a.qName);
 						});
 					}
+				}
+
+				// Remove all measures. Don't show when the context is the only measure
+				if ($scope.addedMeasures.length && ! (column.isMeasure && 1 === $scope.addedMeasures.length)) {
+					removeColumnMenuItems.push({
+						label: "Remove all measures",
+						tid: "remove-all-measures",
+						select: function() {
+							removeAllTableMeasures($scope, selectedTable);
+						}
+					});
+				}
+
+				// Remove column-items
+				if (removeColumnMenuItems.length) {
+					removeColumnMenu = menu.addItem({
+						label: "Remove column",
+						tid: "remove-column",
+						icon: "lui-icon lui-icon--cut"
+					});
+
+					// Each single field
+					if (hasRemovableFields) {
+						selectedTable.qData.qFields.filter( function( a ) {
+							return -1 === removedFields.indexOf(a.qName);
+						}).forEach( function( a ) {
+							removeColumnMenuItems.push({
+								label: a.qName,
+								tid: "remove-field-".concat(a.qName),
+								select: function() {
+									removeTableField($scope, selectedTable, a.qName);
+								}
+							});
+						});
+					}
+
+					// Add remove items
+					removeColumnMenuItems.forEach( function( a ) {
+						removeColumnMenu.addItem(a);
+					});
+				}
+
+				// Remove this field
+				if (hasRemovableFields && column.isDimension) {
+					menu.addItem({
+						label: "Remove field '".concat(column.fieldName, "'"),
+						tid: "remove-this-field",
+						icon: "lui-icon lui-icon--cut",
+						select: function() {
+							removeTableField($scope, selectedTable, column.fieldName);
+						}
+					});
 
 				// Remove measure
-				} else {
+				} else if (column.isMeasure) {
 					menu.addItem({
 						label: "Remove measure",
 						tid: "remove-measure",
 						icon: "lui-icon lui-icon--cut",
 						select: function() {
 							removeTableMeasure($scope, selectedTable, cell.colIx);
-						}
-					});
-				}
-
-				// Remove all measures. Don't show when the context is the only measure
-				if ($scope.addedMeasures.length && ! (column.isMeasure && 1 === $scope.addedMeasures.length)) {
-					menu.addItem({
-						label: "Remove all measures",
-						tid: "remove-all-measures",
-						icon: "lui-icon lui-icon--cut",
-						select: function() {
-							removeAllTableMeasures($scope, selectedTable);
 						}
 					});
 				}
