@@ -21,7 +21,15 @@ define([
 			qDimensions: [],
 			qMeasures: [],
 			qColumnOrder: [],
-			qInterColumnSortOrder: []
+			qInterColumnSortOrder: [],
+			qCalcCondition: {
+				qCond: {
+					qv: ""
+				},
+				qMsg: {
+					qv: "Use the context menu to add fields, dimensions or measures."
+				}
+			}
 		},
 		showTitles: false,
 		title: JSON.parse(qext).title,
