@@ -15,6 +15,7 @@ define([
 			tableStructure: [],
 			exportDimensions: [],
 			removedFields: [],
+			addedDimensions: [],
 			addedMeasures: []
 		},
 		qHyperCubeDef: {
