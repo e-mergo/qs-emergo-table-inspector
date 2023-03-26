@@ -419,7 +419,7 @@ define([
 
 			// Walk added dimensions
 			newProps.props.addedDimensions.forEach( function( a ) {
-				var expression = a.aggregation.replace("$1", qUtil.escapeField(a.field));
+				var expression = parseExpression(a);
 
 				// Skip dimensions for non-existing fields
 				if (-1 === tableData.qData.qFields.map(b => b.qName).indexOf(a.field)) {
@@ -445,7 +445,7 @@ define([
 
 			// Walk added measures
 			newProps.props.addedMeasures.forEach( function( a ) {
-				var expression = a.aggregation.replace("$1", a.isDimension ? a.field : qUtil.escapeField(a.field));
+				var expression = parseExpression(a);
 
 				// Skip measures for non-existing fields
 				if (-1 === tableData.qData.qFields.map(b => b.qName).indexOf(a.field)) {
@@ -953,6 +953,16 @@ define([
 	},
 
 	/**
+	 * Return the parsed expression
+	 *
+	 * @param  {Object} expression Expression parts
+	 * @return {String}            Parsed expression
+	 */
+	parseExpression = function( expression ) {
+		return expression.aggregation.replace("$1", expression.isDimension ? expression.field : qUtil.escapeField(expression.field))
+	},
+
+	/**
 	 * Add a dimension to the embedded visualization
 	 *
 	 * @param  {Object} $scope Extension scope
@@ -979,7 +989,7 @@ define([
 			},
 
 			// Prepare dimension expression
-			expression = dimension.aggregation.replace("$1", qUtil.escapeField(dimension.field));
+			expression = parseExpression(dimension);
 
 			// Add dimension to the dimensions list
 			newProps.qHyperCubeDef.qDimensions.push({
@@ -1145,7 +1155,7 @@ define([
 			},
 
 			// Prepare measure expression
-			expression = measure.aggregation.replace("$1", qUtil.escapeField(measure.field));
+			expression = parseExpression(measure);
 
 			// Add measure to the measures list
 			newProps.qHyperCubeDef.qMeasures.push({
@@ -1604,20 +1614,23 @@ define([
 		 * @return {Boolean}       Column is a dimension
 		 */
 		isDimension = function( column ) {
-			return -1 !== $scope.addedDimensions.map(a => a.aggregation.replace("$1", qUtil.escapeField(a.field))).indexOf(column.text || column);
+			return -1 !== $scope.addedDimensions.map(a => parseExpression(a)).indexOf(column.text || column);
 		},
 
 		/**
 		 * Add a new dimension menu item to the provided menu
 		 *
-		 * @param  {Object} menu Menu to add to
-		 * @param  {Object} table Table context
-		 * @param  {Object} fieldName Field name
-		 * @param  {Object} colIndex Optional. Column index
+		 * @param  {Object}  menu Menu to add to
+		 * @param  {Object}  table Table context
+		 * @param  {Object}  fieldName Field name
+		 * @param  {Object}  colIndex Optional. Column index
+		 * @param  {Boolean} isDimension Optional. Whether this field is a dimension.
 		 * @return {Void}
 		 */
-		addDimensionMenuItems = function( menu, table, fieldName, colIndex ) {
+		addDimensionMenuItems = function( menu, table, fieldName, colIndex, isDimension ) {
 			var i, j, mmenu;
+
+			isDimension = !! isDimension;
 
 			for (i in dimensionList) {
 				if (dimensionList.hasOwnProperty(i)) {
@@ -1631,12 +1644,13 @@ define([
 					// Add aggregation options
 					dimensionList[i].options.forEach( function( aggregation, ix ) {
 						mmenu.addItem({
-							label: aggregation.replace("$1", qUtil.escapeField(fieldName)),
+							label: parseExpression({ aggregation, field: fieldName, isDimension }),
 							tid: "add-dimension-".concat(i.toLowerCase(), "-", ix),
 							select: function() {
 								addTableDimension($scope, table, {
 									aggregation: aggregation,
-									field: fieldName
+									field: fieldName,
+									isDimension: isDimension
 								}, colIndex);
 							}
 						});
@@ -1648,24 +1662,28 @@ define([
 		/**
 		 * Add a new measure menu item to the provided menu
 		 *
-		 * @param  {Object} menu Menu to add to
-		 * @param  {Object} table Table context
-		 * @param  {Object} fieldName Field name
-		 * @param  {Object} colIndex Optional. Column index
+		 * @param  {Object}  menu Menu to add to
+		 * @param  {Object}  table Table context
+		 * @param  {Object}  fieldName Field name
+		 * @param  {Object}  colIndex Optional. Column index
+		 * @param  {Boolean} isDimension Optional. Whether this field is a dimension.
 		 * @return {Void}
 		 */
-		addMeasureMenuItems = function( menu, table, fieldName, colIndex ) {
+		addMeasureMenuItems = function( menu, table, fieldName, colIndex, isDimension ) {
 			var i, j, mmenu;
+
+			isDimension = !! isDimension;
 
 			// Add quick measures
 			quickMeasureList.forEach( function( aggregation, ix ) {
 				menu.addItem({
-					label: aggregation.replace("$1", qUtil.escapeField(fieldName)),
+					label: parseExpression({ aggregation, field: fieldName, isDimension }),
 					tid: "add-measure-quick-".concat(ix),
 					select: function() {
 						addTableMeasure($scope, table, {
 							aggregation: aggregation,
-							field: fieldName
+							field: fieldName,
+							isDimension: isDimension
 						}, colIndex);
 					}
 				});
@@ -1683,12 +1701,13 @@ define([
 					// Add aggregation options
 					measureList[i].options.forEach( function( aggregation, ix ) {
 						mmenu.addItem({
-							label: aggregation.replace("$1", qUtil.escapeField(fieldName)),
+							label: parseExpression({ aggregation, field: fieldName, isDimension }),
 							tid: "add-measure-".concat(i.toLowerCase(), "-", ix),
 							select: function() {
 								addTableMeasure($scope, table, {
 									aggregation: aggregation,
-									field: fieldName
+									field: fieldName,
+									isDimension: isDimension
 								}, colIndex);
 							}
 						});
@@ -1966,9 +1985,9 @@ define([
 					icon: "lui-icon lui-icon--add"
 				});
 
-				// Add single field dimensions
-				if (columnIsField) {
-					addDimensionMenuItems(addDimensionMenu, selectedTable, column.text, cell.colIx);
+				// Add single field or dimension dimensions
+				if (column.isDimension) {
+					addDimensionMenuItems(addDimensionMenu, selectedTable, column.text, cell.colIx, isDimension(column));
 
 				// Add all field dimensions
 				} else {
@@ -2001,9 +2020,9 @@ define([
 						icon: "lui-icon lui-icon--bar-chart"
 					});
 
-					// Add single field measures
+					// Add single field or dimension measures
 					if (column.isDimension) {
-						addMeasureMenuItems(addMeasureMenu, selectedTable, column.fieldName, cell.colIx);
+						addMeasureMenuItems(addMeasureMenu, selectedTable, column.text, cell.colIx, isDimension(column));
 
 					// Add all field measures
 					} else {
@@ -2170,7 +2189,7 @@ define([
 
 		// Add measures
 		propertyTree.qProperty.props.addedMeasures.forEach( function( measure ) {
-			var expression = measure.aggregation.replace("$1", qUtil.escapeField(measure.field));
+			var expression = parseExpression(measure);
 
 			// Include measure
 			retval.data[0].measures.push({
