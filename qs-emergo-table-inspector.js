@@ -1160,12 +1160,23 @@ define([
 		};
 
 		/**
+		 * Return whether the extension can be converted
+		 *
+		 * @return {Boolean} Can convert the extension
+		 */
+		$scope.canConvertToTable = function() {
+			return $scope.addedMeasures.length || $scope.layout.props && $scope.layout.props.tableStructure.length;
+		};
+
+		/**
 		 * Convert extension to table
 		 *
 		 * @return {Void}
 		 */
 		$scope.convertToTable = function() {
-			convertExtensionToEmbeddedViz($scope);
+			if ($scope.canConvertToTable()) {
+				convertExtensionToEmbeddedViz($scope);
+			}
 		};
 
 		/**
