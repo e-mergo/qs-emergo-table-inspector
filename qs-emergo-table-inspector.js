@@ -542,7 +542,13 @@ define([
 							reloadEmbeddedViz($scope);
 						}
 					});
-				}
+				},
+
+				// When disabling interaction
+				noInteraction: $scope.options.noInteraction,
+
+				// When disabling selections
+				noSelections: $scope.options.noSelections
 			});
 
 			// Store visualization id for future reference
