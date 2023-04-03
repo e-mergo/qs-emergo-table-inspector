@@ -341,6 +341,64 @@ define([
 	},
 
 	/**
+	 * Return the parsed expression
+	 *
+	 * @param  {Object} expression Expression parts
+	 * @return {String}            Parsed expression
+	 */
+	parseExpression = function( expression ) {
+		return expression.aggregation.replace("$1", expression.isDimension ? expression.field : qUtil.escapeField(expression.field))
+	},
+
+	/**
+	 * Return a new definition of a hypercube dimension
+	 *
+	 * @param  {String|Object} dimension Dimension expression or details
+	 * @return {Object}                  Dimension definition
+	 */
+	createHyperCubeDefDimension = function( dimension ) {
+		var isDimension = "string" !== typeof dimension,
+		    expression = isDimension ? parseExpression(dimension) : dimension;
+
+		return {
+			isField: ! isDimension,
+			isDimension: !! isDimension,
+			dimension: dimension,
+			qDef: {
+				cId: qUtil.generateId(),
+				qFieldDefs: [isDimension ? "=".concat(expression) : expression],
+				qFieldLabels: [expression],
+				autoSort: true,
+				qSortCriterias: [{
+					qSortByAscii: 1
+				}]
+			}
+		};
+	},
+
+	/**
+	 * Return a new definition of a hypercube measure
+	 *
+	 * @param  {Object} measure Measure details
+	 * @return {Object}         Measure definition
+	 */
+	createHyperCubeDefMeasure = function( measure ) {
+		var expression = parseExpression(measure);
+
+		return {
+			measure: measure,
+			qDef: {
+				cId: qUtil.generateId(),
+				qDef: expression,
+				qLabel: expression
+			},
+			qSortBy: {
+				qSortByNumeric: -1
+			}
+		};
+	},
+
+	/**
 	 * Reset the visualization's hypercube definition
 	 *
 	 * @param  {Object} $scope Extension scope
@@ -404,22 +462,11 @@ define([
 				}
 
 				// Add field to hypercube
-				newProps.qHyperCubeDef.qDimensions.push({
-					isField: true,
-					qDef: {
-						qFieldDefs: [a.qName],
-						qFieldLabels: [a.qName],
-						autoSort: true,
-						qSortCriterias: [{
-							qSortByAscii: 1
-						}]
-					}
-				});
+				newProps.qHyperCubeDef.qDimensions.push(createHyperCubeDefDimension(a.qName));
 			});
 
 			// Walk added dimensions
 			newProps.props.addedDimensions.forEach( function( a ) {
-				var expression = parseExpression(a);
 
 				// Skip dimensions for non-existing fields
 				if (-1 === tableData.qData.qFields.map(b => b.qName).indexOf(a.field)) {
@@ -430,22 +477,11 @@ define([
 				actualAddedDimensions.push(a);
 
 				// Add dimension to hypercube
-				newProps.qHyperCubeDef.qDimensions.push({
-					isDimension: true,
-					qDef: {
-						qFieldDefs: ["=".concat(expression)],
-						qFieldLabels: [expression],
-						autoSort: true,
-						qSortCriterias: [{
-							qSortByAscii: 1
-						}]
-					}
-				});
+				newProps.qHyperCubeDef.qDimensions.push(createHyperCubeDefDimension(a));
 			});
 
 			// Walk added measures
 			newProps.props.addedMeasures.forEach( function( a ) {
-				var expression = parseExpression(a);
 
 				// Skip measures for non-existing fields
 				if (-1 === tableData.qData.qFields.map(b => b.qName).indexOf(a.field)) {
@@ -456,15 +492,7 @@ define([
 				actualAddedMeasures.push(a);
 
 				// Add measure to hypercube
-				newProps.qHyperCubeDef.qMeasures.push({
-					qDef: {
-						qDef: expression,
-						qLabel: expression
-					},
-					qSortBy: {
-						qSortByNumeric: -1
-					}
-				});
+				newProps.qHyperCubeDef.qMeasures.push(createHyperCubeDefMeasure(a));
 			});
 
 			// Correct the stored manipulations
@@ -692,17 +720,7 @@ define([
 			};
 
 			// Add field to the dimension list
-			newProps.qHyperCubeDef.qDimensions.push({
-				isField: true,
-				qDef: {
-					qFieldDefs: [fieldName],
-					qFieldLabels: [fieldName],
-					autoSort: true,
-					qSortCriterias: [{
-						qSortByAscii: 1
-					}]
-				}
-			});
+			newProps.qHyperCubeDef.qDimensions.push(createHyperCubeDefDimension(fieldName));
 
 			// Add the field to ordering and sorting lists
 			["qColumnOrder", "qInterColumnSortOrder"].forEach( function( a ) {
@@ -752,17 +770,7 @@ define([
 			$scope.removedFields.forEach( function( a, num ) {
 
 				// Add field to the dimension list
-				newProps.qHyperCubeDef.qDimensions.push({
-					isField: true,
-					qDef: {
-						qFieldDefs: [a],
-						qFieldLabels: [a],
-						autoSort: true,
-						qSortCriterias: [{
-							qSortByAscii: 1
-						}]
-					}
-				});
+				newProps.qHyperCubeDef.qDimensions.push(createHyperCubeDefDimension(a));
 
 				// Add the field to ordering and sorting lists
 				["qColumnOrder", "qInterColumnSortOrder"].forEach( function( a ) {
@@ -959,16 +967,6 @@ define([
 	},
 
 	/**
-	 * Return the parsed expression
-	 *
-	 * @param  {Object} expression Expression parts
-	 * @return {String}            Parsed expression
-	 */
-	parseExpression = function( expression ) {
-		return expression.aggregation.replace("$1", expression.isDimension ? expression.field : qUtil.escapeField(expression.field))
-	},
-
-	/**
 	 * Add a dimension to the embedded visualization
 	 *
 	 * @param  {Object} $scope Extension scope
@@ -992,23 +990,10 @@ define([
 					addedDimensions: $scope.addedDimensions,
 					addedMeasures: $scope.addedMeasures
 				}
-			},
-
-			// Prepare dimension expression
-			expression = parseExpression(dimension);
+			};
 
 			// Add dimension to the dimensions list
-			newProps.qHyperCubeDef.qDimensions.push({
-				isDimension: true,
-				qDef: {
-					qFieldDefs: ["=".concat(expression)],
-					qFieldLabels: [expression],
-					autoSort: true,
-					qSortCriterias: [{
-						qSortByAscii: 1
-					}]
-				}
-			});
+			newProps.qHyperCubeDef.qDimensions.push(createHyperCubeDefDimension(dimension));
 
 			// Add the dimension to ordering and sorting lists
 			["qColumnOrder", "qInterColumnSortOrder"].forEach( function( a ) {
@@ -1158,21 +1143,10 @@ define([
 					addedDimensions: $scope.addedDimensions,
 					addedMeasures: $scope.addedMeasures
 				}
-			},
-
-			// Prepare measure expression
-			expression = parseExpression(measure);
+			};
 
 			// Add measure to the measures list
-			newProps.qHyperCubeDef.qMeasures.push({
-				qDef: {
-					qDef: expression,
-					qLabel: expression
-				},
-				qSortBy: {
-					qSortByNumeric: -1
-				}
-			});
+			newProps.qHyperCubeDef.qMeasures.push(createHyperCubeDefMeasure(measure));
 
 			// Add the measure to ordering and sorting lists
 			["qColumnOrder", "qInterColumnSortOrder"].forEach( function( a ) {
@@ -2195,19 +2169,7 @@ define([
 
 		// Add measures
 		propertyTree.qProperty.props.addedMeasures.forEach( function( measure ) {
-			var expression = parseExpression(measure);
-
-			// Include measure
-			retval.data[0].measures.push({
-				qDef: {
-					cId: qUtil.generateId(),
-					qLabel: expression,
-					qDef: expression
-				},
-				qSortBy: {
-					qSortByNumeric: -1
-				}
-			});
+			retval.data[0].measures.push(createHyperCubeDefMeasure(measure));
 		});
 
 		// Reset metadata
