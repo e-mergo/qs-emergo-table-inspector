@@ -1696,6 +1696,11 @@ define([
 			}
 		};
 
+		// Bail when no scope is available
+		if (! $scope) {
+			return;
+		}
+
 		// When we're in Edit mode
 		if (object.inEditState()) {
 
