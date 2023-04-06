@@ -569,6 +569,9 @@ define([
 							}
 						});
 					});
+
+					// Update the custom footnote
+					setCustomFootnote($scope);
 				},
 
 				// When disabling interaction
@@ -1250,6 +1253,26 @@ define([
 	},
 
 	/**
+	 * Update the custom footnote
+	 *
+	 * @return {Void}
+	 */
+	setCustomFootnote = function( $scope ) {
+		if ($scope.vizId) {
+
+			// Get the embedded visualization's object model
+			app.getObject($scope.vizId).then( function( model ) {
+				var noOfRows = model.layout.qHyperCube.qSize.qcy;
+
+				// Set num rows
+				$scope.footnote = "".concat(noOfRows, noOfRows !== 1 ? " rows" : " row");
+			});
+		} else {
+			$scope.footnote = "";
+		}
+	},
+
+	/**
 	 * Extension controller function
 	 *
 	 * @param  {Object} $scope Extension scope
@@ -1313,6 +1336,9 @@ define([
 
 					// Detach id from scope
 					$scope.vizId = undefined;
+
+					// Reset custom footnote
+					$scope.footnote = "";
 				}
 			}
 		});
@@ -1325,6 +1351,9 @@ define([
 
 		// Added measures
 		$scope.addedMeasures = $scope.layout.props.addedMeasures || [];
+
+		// Custom footnote
+		$scope.footnote = "";
 
 		// Initiate first data table when set
 		getAppTableByName($scope.layout.props.tableName).then( function( tableData ) {

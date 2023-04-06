@@ -4,11 +4,16 @@
  * @package E-mergo Tools Bundle
  */
 
-.qs-emergo-table-inspector,
-.qs-emergo-table-inspector .object-container {
+.qs-emergo-table-inspector {
 	position: absolute;
-	height: 100%;
+	display: flex;
+	flex-direction: column;
 	width: 100%;
+	height: 100%;
+}
+
+.qs-emergo-table-inspector .object-container {
+	flex: 1;
 }
 
 .qs-emergo-table-inspector.no-interaction {
@@ -33,7 +38,8 @@
 .qs-emergo-table-inspector.loading .inspector-loading ~ div,
 .qs-emergo-table-inspector:not(.loading) .inspector-loading,
 .qs-emergo-table-inspector.table-selected > .requirements-wrapper,
-.qs-emergo-table-inspector:not(.table-selected) .object-container {
+.qs-emergo-table-inspector:not(.table-selected) .object-container,
+.qs-emergo-table-inspector:not(.table-selected) .qv-footer-wrapper {
 	display: none;
 }
 
@@ -60,6 +66,16 @@
 
 .qs-emergo-table-inspector .convert-to-table {
 	display: block;
+}
+
+.qs-emergo-table-inspector .qv-footer-wrapper {
+	font-weight: normal;
+	font-style: italic;
+	text-decoration: initial;
+	font-size: 0.923077em;
+	font-family: "Source Sans Pro", sans-serif;
+	color: rgba(0, 0, 0, 0.55);
+	background-color: rgb(251, 251, 251);
 }
 
 /* Card-based themes */
