@@ -13,9 +13,8 @@ define([
 		props: {
 			tableName: false,
 			tableStructure: [],
-			exportDimensions: [],
+			tableDimensions: [],
 			removedFields: [],
-			addedDimensions: [],
 			addedMeasures: []
 		},
 		qHyperCubeDef: {

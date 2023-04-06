@@ -140,19 +140,17 @@ define([
 	 * @param  {Object} props Properties
 	 * @return {Object}       Picked properties
 	 */
-	getTablePropsFromObjProps = function( props ) {
-		props = _.defaults(props || initProps, initProps);
-
-		var a = _.pick(props, "props", "qHyperCubeDef");
+	getTablePropsFromObjProps = function( objProps ) {
+		var newProps = _.pick(objProps, "qHyperCubeDef", "props");
 
 		// Define additional table properties
-		a.qHyperCubeDef.qCalcCondition.qCond = { qv: (a.qHyperCubeDef.qDimensions.length || a.qHyperCubeDef.qMeasures.length) ? "" : "0" };
-		a.showTitles = true;
-		a.title = "Table Inspector - ".concat(a.props.tableName);
-		a.subtitle = a.props.removedFields.length ? "Removed fields: ".concat(a.props.removedFields.join(", ")) : "";
-		a.totals = { show: true };
+		newProps.qHyperCubeDef.qCalcCondition.qCond = { qv: (newProps.qHyperCubeDef.qDimensions.length || newProps.qHyperCubeDef.qMeasures.length) ? "" : "0" };
+		newProps.showTitles = true;
+		newProps.props && newProps.props.tableName && (newProps.title = "Table Inspector - ".concat(newProps.props.tableName));
+		newProps.props && newProps.props.removedFields && (newProps.subtitle = newProps.props.removedFields.length ? "Removed fields: ".concat(newProps.props.removedFields.join(", ")) : "");
+		newProps.totals = { show: true };
 
-		return a;
+		return newProps;
 	},
 
 	/**
@@ -167,10 +165,6 @@ define([
 			"/qHyperCubeDef/qColumnOrder",
 			"/qHyperCubeDef/qInterColumnSortOrder",
 			"/qHyperCubeDef/qCalcCondition/qCond/qv",
-			"/props/tableName",
-			"/props/removedFields",
-			"/props/addedDimensions",
-			"/props/addedMeasures",
 			"/title",
 			"/subtitle"
 		],
@@ -179,9 +173,8 @@ define([
 			"/qHyperCubeDef/qInterColumnSortOrder",
 			"/props/tableName",
 			"/props/tableStructure",
-			"/props/exportDimensions",
+			"/props/tableDimensions",
 			"/props/removedFields",
-			"/props/addedDimensions",
 			"/props/addedMeasures"
 		]
 	},
@@ -246,22 +239,29 @@ define([
 	 * Update the properties of the visualization
 	 *
 	 * @param  {Object} $scope Extension scope
-	 * @param  {Object} props  Properties
-	 * @return {Promise} Visualization is updated
+	 * @param  {Object} props  Properties to update
+	 * @return {Promise}       Visualization is updated
 	 */
 	updateExtensionVisualization = function( $scope, props ) {
 		var patcher = getPatcher("extension"), patches;
 
-		// Clear the table structure
-		props.props.tableStructure = [];
+		// Ensure set of sub properties
+		props.props = props.props || {};
 
-		// Walk the visualization's dimensions
-		props.qHyperCubeDef.qDimensions.filter(a => a.isField).forEach( function( a ) {
+		// When updating dimensions
+		if (props.qHyperCubeDef && props.qHyperCubeDef.qDimensions) {
 
-			// Rebuild the table structure. This property is used to determine whether
-			// the table is changed in the datamodel. See `createEmbeddedViz()`.
-			props.props.tableStructure.push(a.qDef.qFieldDefs[0]);
-		});
+			// Clear the table structure
+			props.props.tableStructure = [];
+
+			// Walk the visualization's dimensions
+			props.qHyperCubeDef.qDimensions.filter(a => a.isField).forEach( function( a ) {
+
+				// Rebuild the table structure. This property is used to determine whether
+				// the table is changed in the datamodel. See `createEmbeddedViz()`.
+				props.props.tableStructure.push(a.qDef.qFieldDefs[0]);
+			});
+		}
 
 		// Define patches from props
 		patches = patcher(props);
@@ -321,18 +321,8 @@ define([
 				// Get the embedded visualization's properties
 				return getEffectivePropertiesById($scope.vizId).then( function( modelProps ) {
 
-					// Keep dimension data for export purposes. This set contains
-					// more data than the qDimensions setup in `prepareEmbeddedViz()`.
-					props.props.exportDimensions = modelProps.qHyperCubeDef.qDimensions.map( function( a ) {
-
-						// Generate the dimension's id when missing
-						if (! a.qDef.cId) {
-							a.qDef.cId = qUtil.generateId();
-						}
-
-						// Keep the stringify'd version
-						return JSON.stringify(a);
-					});
+					// Keep dimensions
+					props.props.tableDimensions = modelProps.qHyperCubeDef.qDimensions.map(a => a.dimension);
 
 					return updateExtensionVisualization($scope, props);
 				});
@@ -401,9 +391,9 @@ define([
 	/**
 	 * Reset the visualization's hypercube definition
 	 *
-	 * @param  {Object} $scope Extension scope
+	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
-	 * @return {Promise} Properties are saved
+	 * @return {Promise}          Properties are saved
 	 */
 	prepareEmbeddedViz = function( $scope, tableData ) {
 		var dfd = $q.defer(), newProps = util.copy(initProps);
@@ -416,14 +406,12 @@ define([
 		// Reset existing properties
 		if ($scope.vizId) {
 
-			// Keep the stored manipulations when preparing the same table
+			// Use the stored manipulations when preparing the same table
 			if ($scope.layout.props.tableName === tableData.value) {
 				newProps.props.removedFields = $scope.removedFields;
-				newProps.props.addedDimensions = $scope.addedDimensions;
 				newProps.props.addedMeasures = $scope.addedMeasures;
 			} else {
 				$scope.removedFields = [];
-				$scope.addedDimensions = [];
 				$scope.addedMeasures = [];
 			}
 
@@ -434,7 +422,6 @@ define([
 
 			// Set the stored manipulations. Maybe stored values are present
 			newProps.props.removedFields = $scope.removedFields = $scope.layout.props.removedFields || [];
-			newProps.props.addedDimensions = $scope.addedDimensions = $scope.layout.props.addedDimensions || [];
 			newProps.props.addedMeasures = $scope.addedMeasures = $scope.layout.props.addedMeasures || [];
 
 			// Get the object's properties
@@ -450,31 +437,23 @@ define([
 
 		// Return the prepared properties
 		return dfd.promise.then( function() {
-			var actualRemovedFields = [], actualAddedDimensions = [], actualAddedMeasures = [];
+			var tableDimensions = $scope.layout.props.tableDimensions.length ? $scope.layout.props.tableDimensions.concat(newProps.props.removedFields) : tableData.qData.qFields.map(a => a.qName),
+			    actualRemovedFields = [], actualAddedMeasures = [];
 
-			// Walk selected table's fields
-			tableData.qData.qFields.forEach( function( a ) {
+			// Walk table dimensions
+			tableDimensions.forEach( function( a ) {
+				if ("string" === typeof a) {
 
-				// Skip removed fields
-				if (-1 !== newProps.props.removedFields.indexOf(a.qName)) {
-					actualRemovedFields.push(a.qName);
-					return;
-				}
-
-				// Add field to hypercube
-				newProps.qHyperCubeDef.qDimensions.push(createHyperCubeDefDimension(a.qName));
-			});
-
-			// Walk added dimensions
-			newProps.props.addedDimensions.forEach( function( a ) {
+					// Skip removed fields
+					if (-1 !== newProps.props.removedFields.indexOf(a)) {
+						actualRemovedFields.push(a);
+						return;
+					}
 
 				// Skip dimensions for non-existing fields
-				if (-1 === tableData.qData.qFields.map(b => b.qName).indexOf(a.field)) {
+				} else if (-1 === tableData.qData.qFields.map(b => b.qName).indexOf(a.field)) {
 					return;
 				}
-
-				// Collect added dimension
-				actualAddedDimensions.push(a);
 
 				// Add dimension to hypercube
 				newProps.qHyperCubeDef.qDimensions.push(createHyperCubeDefDimension(a));
@@ -497,10 +476,9 @@ define([
 
 			// Correct the stored manipulations
 			newProps.props.removedFields = actualRemovedFields;
-			newProps.props.addedDimensions = actualAddedDimensions;
 			newProps.props.addedMeasures = actualAddedMeasures;
 
-			// Add the fields to ordering and sorting lists
+			// Add columns to ordering and sorting lists
 			["qColumnOrder", "qInterColumnSortOrder"].forEach( function( a ) {
 				var listDiff = newProps.qHyperCubeDef.qDimensions.length + newProps.qHyperCubeDef.qMeasures.length - newProps.qHyperCubeDef[a].length;
 
@@ -508,12 +486,12 @@ define([
 					// Use previously defined ordering and sorting lists
 					? (0 < listDiff)
 
-						// The new field list is longer
+						// The new list is longer
 						? newProps.qHyperCubeDef[a].concat(
 							_.keys(newProps.qHyperCubeDef.qDimensions.concat(newProps.qHyperCubeDef.qMeasures)).map(Number).slice(newProps.qHyperCubeDef[a].length)
 						)
 
-						// The new field list is shorter
+						// The new list is shorter
 						: newProps.qHyperCubeDef[a].filter( function( b ) {
 							return b < (newProps.qHyperCubeDef.qDimensions.length + newProps.qHyperCubeDef.qMeasures.length);
 						})
@@ -536,10 +514,10 @@ define([
 	 * @return {Promise} Table is created
 	 */
 	createEmbeddedViz = function( $scope, props ) {
-		var _props = getTablePropsFromObjProps(props);
+		var newProps = getTablePropsFromObjProps(props);
 
 		// Create viz-on-the-fly with selected patches
-		return app.visualization.create("table", [], _props).then( function( object ) {
+		return app.visualization.create("table", [], newProps).then( function( object ) {
 			var $container = $("#".concat($scope.containerId)),
 
 			// Insert object in the extension's element
@@ -547,9 +525,11 @@ define([
 				/**
 				 * Act when the table is rendered
 				 *
-				 * This fires only when the data model is reloaded or the sheet is (re)build. The
-				 * following logic enables auto-updates on removal or adding of fields in the app's
-				 * datamodel. Field selections do not affect visualization rendering.
+				 * This callback is triggered on initial render and further visualization
+				 * updates like selections and column ordering and sorting.
+				 *
+				 * The following logic enables auto-updates on removal or adding of fields
+				 * in the app's datamodel.
 				 *
 				 * @return {Void}
 				 */
@@ -561,14 +541,33 @@ define([
 						    newStructure = _.difference(fieldNames, $scope.removedFields),
 						    hasNewStructure = _.difference(prevStructure, newStructure).length || _.difference(newStructure, prevStructure).length;
 
+
 						// Structure was not found, table removed, so reset the extension visualization
-						if (! fieldNames.length){
+						if (! fieldNames.length) {
 							resetExtensionVisualization($scope);
 
 						// Structure was changed, so reload the embedded visualization
 						} else if (hasNewStructure) {
 							reloadEmbeddedViz($scope);
 						}
+					});
+
+					// Synchronize table properties to the extension
+					getEffectivePropertiesById($scope.vizId).then( function( props ) {
+
+						// Keep column ordering and sorting
+						// On manual column ordering dimensions and fields are just reordered in the
+						// qHyperCubeDef.qDimensions list, so save their locations separately in a list
+						// of table dimensions.
+						updateExtensionVisualization($scope, {
+							props: {
+								tableDimensions: props.qHyperCubeDef.qDimensions.map(a => a.dimension)
+							},
+							qHyperCubeDef: {
+								qColumnOrder: props.qHyperCubeDef.qColumnOrder,
+								qInterColumnSortOrder: props.qHyperCubeDef.qInterColumnSortOrder
+							}
+						});
 					});
 				},
 
@@ -634,7 +633,6 @@ define([
 
 			// When reloading, clear the stored manipulations
 			$scope.removedFields = [];
-			$scope.addedDimensions = [];
 			$scope.addedMeasures = [];
 
 			return selectTable($scope, tableData);
@@ -712,10 +710,7 @@ define([
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef,
 				props: {
-					tableName: tableData.value,
-					removedFields: $scope.removedFields,
-					addedDimensions: $scope.addedDimensions,
-					addedMeasures: $scope.addedMeasures
+					removedFields: $scope.removedFields
 				}
 			};
 
@@ -759,10 +754,7 @@ define([
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef,
 				props: {
-					tableName: tableData.value,
-					removedFields: [],
-					addedDimensions: $scope.addedDimensions,
-					addedMeasures: $scope.addedMeasures
+					removedFields: []
 				}
 			};
 
@@ -816,10 +808,7 @@ define([
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef,
 				props: {
-					tableName: tableData.value,
-					removedFields: $scope.removedFields,
-					addedDimensions: $scope.addedDimensions,
-					addedMeasures: $scope.addedMeasures
+					removedFields: $scope.removedFields
 				}
 			},
 
@@ -846,6 +835,50 @@ define([
 				// Update props on the table and extension
 				return updateEmbeddedVizAndExtension($scope, newProps);
 			}
+		}).catch(console.error);
+	},
+
+	/**
+	 * Remove all fields from the embedded visualization
+	 *
+	 * @param  {Object} $scope Extension scope
+	 * @param  {Object} tableData Table data
+	 * @return {Promise} Fields are removed
+	 */
+	removeAllTableFields = function( $scope, tableData ) {
+
+		// Add all fields to the table's hidden fields list
+		$scope.removedFields = tableData.qData.qFields.map(a => a.qName);
+
+		// Get the embedded visualization's properties
+		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
+			var newProps = {
+				qHyperCubeDef: props.qHyperCubeDef,
+				props: {
+					removedFields: $scope.removedFields
+				}
+			},
+
+			// Get field count
+			fieldCount = $scope.removedFields.length,
+
+			// Get dimension count
+			dimensionCount = props.qHyperCubeDef.qDimensions.filter(a => a.isDimension).length;
+
+			// Clear fields in hypercube
+			newProps.qHyperCubeDef.qDimensions = props.qHyperCubeDef.qDimensions.filter(a => a.isDimension);
+
+			// Remove the fields from ordering and sorting lists
+			["qColumnOrder", "qInterColumnSortOrder"].forEach( function( a ) {
+				newProps.qHyperCubeDef[a] = newProps.qHyperCubeDef[a].filter( function( b ) {
+					return b < dimensionCount || b > fieldCount + dimensionCount - 1;
+				}).map( function( b ) {
+					return b < dimensionCount ? b : b - fieldCount;
+				});
+			});
+
+			// Update props on the table and extension
+			return updateEmbeddedVizAndExtension($scope, newProps);
 		}).catch(console.error);
 	},
 
@@ -894,11 +927,6 @@ define([
 					return a.qDef.qFieldDefs[0];
 				})));
 
-				// Remove dimensions
-				$scope.addedDimensions = $scope.addedDimensions.filter( function( a, ix ) {
-					return -1 === fieldIndicesToRemove.map(a => a - props.qHyperCubeDef.qDimensions.filter(a => a.isField).length).indexOf(ix);
-				});
-
 				// Remove measures
 				$scope.addedMeasures = $scope.addedMeasures.filter( function( a, ix ) {
 					return -1 === fieldIndicesToRemove.map(a => a - props.qHyperCubeDef.qDimensions.length).indexOf(ix);
@@ -926,10 +954,9 @@ define([
 				qMeasures = [];
 
 				// Add all other fields to the table's hidden fields list
-				$scope.removedFields = _.difference(_.uniq($scope.removedFields.concat(_.pluck(tableData.qData.qFields, "qName"))), [fieldName]);
+				$scope.removedFields = tableData.qData.qFields.filter(a => a !== fieldName).map(a => a.qName);
 
 				// Remove other manipulations
-				$scope.addedDimensions = [];
 				$scope.addedMeasures = [];
 			}
 
@@ -937,9 +964,7 @@ define([
 			newProps = {
 				qHyperCubeDef: props.qHyperCubeDef,
 				props: {
-					tableName: tableData.value,
 					removedFields: $scope.removedFields,
-					addedDimensions: $scope.addedDimensions,
 					addedMeasures: $scope.addedMeasures
 				}
 			};
@@ -977,19 +1002,10 @@ define([
 	 */
 	addTableDimension = function( $scope, tableData, dimension, position ) {
 
-		// Add the dimension to the table's added dimensions list
-		$scope.addedDimensions = $scope.addedDimensions.concat(dimension);
-
 		// Get the embedded visualization's properties
 		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
 			var newProps = {
-				qHyperCubeDef: props.qHyperCubeDef,
-				props: {
-					tableName: tableData.value,
-					removedFields: $scope.removedFields,
-					addedDimensions: $scope.addedDimensions,
-					addedMeasures: $scope.addedMeasures
-				}
+				qHyperCubeDef: props.qHyperCubeDef
 			};
 
 			// Add dimension to the dimensions list
@@ -1027,21 +1043,10 @@ define([
 	 */
 	removeTableDimension = function( $scope, tableData, position ) {
 
-		// Removing one is equal to removing all
-		if (1 === $scope.addedDimensions.length) {
-			return removeAllTableDimensions($scope, tableData);
-		}
-
 		// Get the embedded visualization's properties
 		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
 			var newProps = {
-				qHyperCubeDef: props.qHyperCubeDef,
-				props: {
-					tableName: tableData.value,
-					removedFields: $scope.removedFields,
-					addedDimensions: $scope.addedDimensions,
-					addedMeasures: $scope.addedMeasures
-				}
+				qHyperCubeDef: props.qHyperCubeDef
 			},
 
 			// Find dimension in columns
@@ -1052,10 +1057,6 @@ define([
 
 			// Dimension is found
 			if (-1 !== ix) {
-
-				// Remove the dimension from the table's added dimensions list
-				$scope.addedDimensions.splice(ix, 1);
-				newProps.props.addedDimensions = $scope.addedDimensions;
 
 				// Remove the dimension from the dimension list
 				newProps.qHyperCubeDef.qDimensions.splice(colNum, 1);
@@ -1084,23 +1085,17 @@ define([
 	 */
 	removeAllTableDimensions = function( $scope, tableData ) {
 
-		// Clear the table's added dimensions list
-		$scope.addedDimensions = [];
-
 		// Get the embedded visualization's properties
 		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
 			var newProps = {
-				qHyperCubeDef: props.qHyperCubeDef,
-				props: {
-					tableName: tableData.value,
-					removedFields: $scope.removedFields,
-					addedDimensions: [],
-					addedMeasures: $scope.addedMeasures
-				}
+				qHyperCubeDef: props.qHyperCubeDef
 			},
 
+			// Get field count
+			fieldCount = props.qHyperCubeDef.qDimensions.filter(a => a.isField).length,
+
 			// Get dimension count
-			dimensionCount = props.qHyperCubeDef.qDimensions.filter(a => a.isField).length;
+			dimensionCount = props.qHyperCubeDef.qDimensions.filter(a => a.isDimension).length;
 
 			// Clear dimensions in hypercube
 			newProps.qHyperCubeDef.qDimensions = props.qHyperCubeDef.qDimensions.filter(a => a.isField);
@@ -1108,9 +1103,9 @@ define([
 			// Remove the dimensions from ordering and sorting lists
 			["qColumnOrder", "qInterColumnSortOrder"].forEach( function( a ) {
 				newProps.qHyperCubeDef[a] = newProps.qHyperCubeDef[a].filter( function( b ) {
-					return b < dimensionCount;
+					return b < fieldCount || b > fieldCount + dimensionCount - 1;
 				}).map( function( b ) {
-					return b < dimensionCount ? b : b - props.qHyperCubeDef.qDimensions.filter(a => a.isDimension).length;
+					return b < fieldCount ? b : b - dimensionCount;
 				});
 			});
 
@@ -1138,9 +1133,6 @@ define([
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef,
 				props: {
-					tableName: tableData.value,
-					removedFields: $scope.removedFields,
-					addedDimensions: $scope.addedDimensions,
 					addedMeasures: $scope.addedMeasures
 				}
 			};
@@ -1184,12 +1176,7 @@ define([
 		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef,
-				props: {
-					tableName: tableData.value,
-					removedFields: $scope.removedFields,
-					addedDimensions: $scope.addedDimensions,
-					addedMeasures: $scope.addedMeasures
-				}
+				props: {}
 			},
 
 			// Find measure in columns
@@ -1240,9 +1227,6 @@ define([
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef,
 				props: {
-					tableName: tableData.value,
-					removedFields: $scope.removedFields,
-					addedDimensions: $scope.addedDimensions,
 					addedMeasures: []
 				}
 			},
@@ -1337,13 +1321,10 @@ define([
 		$scope.containerId = "qs-emergo-table-inspector-".concat($scope.$id);
 
 		// Removed fields
-		$scope.removedFields = $scope.layout.removedFields || [];
-
-		// Added dimensions
-		$scope.addedDimensions = $scope.layout.addedDimensions || [];
+		$scope.removedFields = $scope.layout.props.removedFields || [];
 
 		// Added measures
-		$scope.addedMeasures = $scope.layout.addedMeasures || [];
+		$scope.addedMeasures = $scope.layout.props.addedMeasures || [];
 
 		// Initiate first data table when set
 		getAppTableByName($scope.layout.props.tableName).then( function( tableData ) {
@@ -1588,13 +1569,23 @@ define([
 		},
 
 		/**
+		 * Return whether the column is a field definition
+		 *
+		 * @param  {Object} column Column data
+		 * @return {Boolean}       Column is a field
+		 */
+		isField = function( column ) {
+			return -1 !== $scope.layout.props.tableDimensions.filter(a => ! a.field).indexOf(column.text || column);
+		},
+
+		/**
 		 * Return whether the column is a dimension definition
 		 *
 		 * @param  {Object} column Column data
 		 * @return {Boolean}       Column is a dimension
 		 */
 		isDimension = function( column ) {
-			return -1 !== $scope.addedDimensions.map(a => parseExpression(a)).indexOf(column.text || column);
+			return -1 !== $scope.layout.props.tableDimensions.filter(a => a.field).map(a => parseExpression(a)).indexOf(column.text || column);
 		},
 
 		/**
@@ -1787,6 +1778,20 @@ define([
 				removedFields = object.layout.props.removedFields,
 
 				/**
+				 * Holds the number of fields
+				 *
+				 * @type {Array}
+				 */
+				numFields = object.layout.props.tableDimensions.filter(a => ! a.field).length,
+
+				/**
+				 * Holds the number of dimensions
+				 *
+				 * @type {Array}
+				 */
+				numDimensions = object.layout.props.tableDimensions.filter(a => a.field).length,
+
+				/**
 				 * Holds the cell's scope
 				 *
 				 * @type {Object}
@@ -1828,7 +1833,16 @@ define([
 				 *
 				 * @type {Boolean}
 				 */
-				columnIsField = column.isDimension && ! isDimension(column);
+				columnIsField = column.isDimension && ! isDimension(column),
+
+				/**
+				 * Holds the maximum column index
+				 *
+				 * @type {Number}
+				 */
+				maxColIx = columns.reduce( function( max, a ) {
+					return a.colIx > max ? a.colIx : max;
+				}, 0);
 
 				// Copy cell value
 				if (cell.text) {
@@ -1925,11 +1939,6 @@ define([
 					}
 				}
 
-				// The maximum column index
-				var maxColIx = columns.reduce( function( max, a ) {
-					return a.colIx > max ? a.colIx : max;
-				}, 0);
-
 				// Remove all other fields
 				if (columnIsField) {
 					removeColumnMenuItems.push({
@@ -1963,6 +1972,17 @@ define([
 					});
 				}
 
+				// Remove all fields
+				if (numFields && ! (isField(column) && 1 === numFields)) {
+					removeColumnMenuItems.push({
+						label: "Remove all fields",
+						tid: "remove-all-fields",
+						select: function() {
+							removeAllTableFields($scope, selectedTable);
+						}
+					});
+				}
+
 				// Add dimension
 				addDimensionMenu = menu.addItem({
 					label: "Add dimension",
@@ -1987,7 +2007,7 @@ define([
 				}
 
 				// Remove all dimensions. Don't show when the context is the only dimension
-				if ($scope.addedDimensions.length && ! (isDimension(column) && 1 === $scope.addedDimensions.length)) {
+				if (numDimensions && ! (isDimension(column) && 1 === numDimensions)) {
 					removeColumnMenuItems.push({
 						label: "Remove all dimensions",
 						tid: "remove-all-dimensions",
@@ -2159,18 +2179,10 @@ define([
 	exportProperties = function( propertyTree, hyperCubePath ) {
 		var retval = objectConversion.hypercube.exportProperties.apply(this, arguments);
 
-		// Add fields as dimensions
-		propertyTree.qProperty.props.exportDimensions.forEach( function( fieldData ) {
-			var field = JSON.parse(fieldData);
-
-			// Include field when not removed
-			if (-1 === propertyTree.qProperty.props.removedFields.indexOf(field.qDef.qFieldDefs[0])) {
-				retval.data[0].dimensions.push(field);
-			}
+		// Add dimensions
+		propertyTree.qProperty.props.tableDimensions.forEach( function( dimension ) {
+			retval.data[0].dimensions.push(createHyperCubeDefDimension(dimension));
 		});
-
-		// Remove export dimensions property
-		delete propertyTree.qProperty.props.exportDimensions;
 
 		// Add measures
 		propertyTree.qProperty.props.addedMeasures.forEach( function( measure ) {
