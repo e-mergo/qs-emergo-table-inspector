@@ -110,7 +110,7 @@ define([
 	 * Return the table data for the given table
 	 *
 	 * @param  {String} tableName Table name
-	 * @return {Promise} Table data
+	 * @return {Promise}          Table data
 	 */
 	getAppTableByName = function( tableName ) {
 		return getAppTables().then( function( tables ) {
@@ -124,7 +124,7 @@ define([
 	 * Return the table's field names
 	 *
 	 * @param  {String} tableName Table name
-	 * @return {Promise} Table field names
+	 * @return {Promise}          Table field names
 	 */
 	getAppTableFieldNames = function( tableName ) {
 		return getAppTableByName(tableName).then( function( a ) {
@@ -185,7 +185,7 @@ define([
 	 * Fields to patch are defined in the `pathsToPatch` global object.
 	 *
 	 * @param  {String} type Optional. Type of patch generator. Defaults to 'dataTable'.
-	 * @return {Function} Helper for setting up patches for the type
+	 * @return {Function}    Helper for setting up patches for the type
 	 */
 	getPatcher = function( type ) {
 		type = type || "dataTable";
@@ -274,7 +274,7 @@ define([
 	 * Remove the saved properties from the visualization
 	 *
 	 * @param  {Object} $scope Extension scope
-	 * @return {Promise} Visualization is reset
+	 * @return {Promise}       Visualization is reset
 	 */
 	resetExtensionVisualization = function( $scope ) {
 
@@ -297,9 +297,9 @@ define([
 	/**
 	 * Procedure for selecting a data table
 	 *
-	 * @param  {Object} $scope Extension scope
+	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
-	 * @return {Promise} Table is selected
+	 * @return {Promise}          Table is selected
 	 */
 	selectTable = function( $scope, tableData ) {
 
@@ -512,7 +512,7 @@ define([
 	 * Create a new embedded visualization object
 	 *
 	 * @param  {Object} $scope Extension scope
-	 * @return {Promise} Table is created
+	 * @return {Promise}       Table is created
 	 */
 	createEmbeddedViz = function( $scope, props ) {
 		var newProps = getTablePropsFromObjProps(props);
@@ -594,7 +594,7 @@ define([
 	 *
 	 * @param  {Object} $scope Extension scope
 	 * @param  {Object} props  Propeprties with updates
-	 * @return {Promise} Table is updated
+	 * @return {Promise}       Table is updated
 	 */
 	updateEmbeddedViz = function( $scope, props ) {
 		var dfd = $q.defer(), patcher = getPatcher("dataTable"), patches;
@@ -618,7 +618,7 @@ define([
 	 *
 	 * @param  {Object} $scope Extension scope
 	 * @param  {Object} props  Properties with updates
-	 * @return {Promise} Table is updated
+	 * @return {Promise}       Table is updated
 	 */
 	updateEmbeddedVizAndExtension = function( $scope, props ) {
 		return updateEmbeddedViz($scope, props).then( function() {
@@ -630,7 +630,7 @@ define([
 	 * Reload the embedded visualization object
 	 *
 	 * @param  {Object} $scope Extension scope
-	 * @return {Promise} Table is reloaded
+	 * @return {Promise}       Table is reloaded
 	 */
 	reloadEmbeddedViz = function( $scope ) {
 		return getAppTableByName($scope.layout.props.tableName).then( function( tableData ) {
@@ -654,7 +654,7 @@ define([
 	 * );
 	 *
 	 * @param  {Object} $scope Extension scope
-	 * @return {Promise} Extension is converted
+	 * @return {Promise}       Extension is converted
 	 */
 	convertExtensionToEmbeddedViz = function( $scope ) {
 
@@ -693,11 +693,11 @@ define([
 	/**
 	 * Add a field to the embedded visualization
 	 *
-	 * @param  {Object} $scope Extension scope
+	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
 	 * @param  {String} fieldName Field name
-	 * @param  {Number} position Optional. Position to insert the field at.
-	 * @return {Promise} Field is added
+	 * @param  {Number} position  Optional. Position to insert the field at.
+	 * @return {Promise}          Field is added
 	 */
 	addTableField = function( $scope, tableData, fieldName, position ) {
 
@@ -741,10 +741,10 @@ define([
 	/**
 	 * Add all removed fields to the embedded visualization
 	 *
-	 * @param  {Object} $scope Extension scope
+	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
-	 * @param  {Number} position Optional. Position to insert the field at.
-	 * @return {Promise} Fields are added
+	 * @param  {Number} position  Optional. Position to insert the field at.
+	 * @return {Promise}          Fields are added
 	 */
 	addAllTableFields = function( $scope, tableData, position ) {
 
@@ -792,10 +792,10 @@ define([
 	/**
 	 * Remove a field from the embedded visualization
 	 *
-	 * @param  {Object} $scope Extension scope
+	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
 	 * @param  {String} fieldName Field name
-	 * @return {Promise} Field is hidden
+	 * @return {Promise}          Field is hidden
 	 */
 	removeTableField = function( $scope, tableData, fieldName ) {
 
@@ -840,9 +840,9 @@ define([
 	/**
 	 * Remove all fields from the embedded visualization
 	 *
-	 * @param  {Object} $scope Extension scope
+	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
-	 * @return {Promise} Fields are removed
+	 * @return {Promise}          Fields are removed
 	 */
 	removeAllTableFields = function( $scope, tableData ) {
 
@@ -884,12 +884,12 @@ define([
 	/**
 	 * Remove all columns but the indicated field from the embedded visualization
 	 *
-	 * @param  {Object} $scope Extension scope
+	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
 	 * @param  {String} fieldName Field name
-	 * @param  {Number} position Optional. Required when removing with direction
+	 * @param  {Number} position  Optional. Required when removing with direction
 	 * @param  {Number} direction Optional. Removal direction, -1 for left, 1 for right
-	 * @return {Promise} Fields are hidden
+	 * @return {Promise}          Fields are hidden
 	 */
 	removeOtherTableColumns = function( $scope, tableData, fieldName, position, direction ) {
 		direction = direction || 0;
@@ -993,11 +993,11 @@ define([
 	/**
 	 * Add a dimension to the embedded visualization
 	 *
-	 * @param  {Object} $scope Extension scope
+	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
 	 * @param  {Object} dimension Dimension details
-	 * @param  {Number} position Optional. Position to insert the dimension at.
-	 * @return {Promise} Dimension is added
+	 * @param  {Number} position  Optional. Position to insert the dimension at.
+	 * @return {Promise}          Dimension is added
 	 */
 	addTableDimension = function( $scope, tableData, dimension, position ) {
 
@@ -1035,10 +1035,10 @@ define([
 	/**
 	 * Remove a dimension from the embedded visualization
 	 *
-	 * @param  {Object} $scope Extension scope
+	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
-	 * @param  {Number} position Position at which to remove the dimension
-	 * @return {Promise} Dimension is removed
+	 * @param  {Number} position  Position at which to remove the dimension
+	 * @return {Promise}          Dimension is removed
 	 */
 	removeTableDimension = function( $scope, tableData, position ) {
 
@@ -1078,9 +1078,9 @@ define([
 	/**
 	 * Remove all dimensions from the embedded visualization
 	 *
-	 * @param  {Object} $scope Extension scope
+	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
-	 * @return {Promise} Dimensions are removed
+	 * @return {Promise}          Dimensions are removed
 	 */
 	removeAllTableDimensions = function( $scope, tableData ) {
 
@@ -1116,11 +1116,11 @@ define([
 	/**
 	 * Add a measure to the embedded visualization
 	 *
-	 * @param  {Object} $scope Extension scope
+	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
-	 * @param  {Object} measure Measure details
-	 * @param  {Number} position Optional. Position to insert the measure at.
-	 * @return {Promise} Measure is added
+	 * @param  {Object} measure   Measure details
+	 * @param  {Number} position  Optional. Position to insert the measure at.
+	 * @return {Promise}          Measure is added
 	 */
 	addTableMeasure = function( $scope, tableData, measure, position ) {
 
@@ -1159,10 +1159,10 @@ define([
 	/**
 	 * Remove a measure from the embedded visualization
 	 *
-	 * @param  {Object} $scope Extension scope
+	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
-	 * @param  {Number} position Position at which to remove the measure
-	 * @return {Promise} Measure is removed
+	 * @param  {Number} position  Position at which to remove the measure
+	 * @return {Promise}          Measure is removed
 	 */
 	removeTableMeasure = function( $scope, tableData, position ) {
 
@@ -1212,9 +1212,9 @@ define([
 	/**
 	 * Remove all measures from the embedded visualization
 	 *
-	 * @param  {Object} $scope Extension scope
+	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
-	 * @return {Promise} Measures are removed
+	 * @return {Promise}          Measures are removed
 	 */
 	removeAllTableMeasures = function( $scope, tableData ) {
 
@@ -1251,6 +1251,7 @@ define([
 	/**
 	 * Update the custom footnote
 	 *
+	 * @param  {Object} $scope Extension scope
 	 * @return {Void}
 	 */
 	setCustomFootnote = function( $scope ) {
@@ -1265,13 +1266,13 @@ define([
 				    noOfCols = model.layout.qHyperCube.qSize.qcx,
 				    noOfRows = model.layout.qHyperCube.qSize.qcy;
 
-				// Add num rows
+				// Num rows
 				notes.push("".concat(Number(noOfRows).toLocaleString(), noOfRows !== 1 ? " rows" : " row"));
 
-				// Add full size
+				// Full table size
 				notes.push("Full: ".concat(Number(noOfTableCols).toLocaleString(), " × ", Number(noOfTableRows).toLocaleString()));
 
-				// Add visible size
+				// Visible size
 				if (! (noOfTableCols === noOfCols && noOfTableRows === noOfRows)) {
 					notes.push("Visible: ".concat(Number(noOfCols).toLocaleString(), " × ", Number(noOfRows).toLocaleString()));
 				}
@@ -1287,7 +1288,7 @@ define([
 	 * Extension controller function
 	 *
 	 * @param  {Object} $scope Extension scope
-	 * @param  {Object} $el Scope's jQuery element
+	 * @param  {Object} $el    Extension's jQuery element
 	 * @return {Void}
 	 */
 	controller = ["$scope", "$element", function( $scope, $el ) {
@@ -1449,7 +1450,7 @@ define([
 	 * Return the element's straight table cell's scope
 	 *
 	 * @param  {Element} element HTML element to find its cell scope for
-	 * @return {Object} The cell's scope
+	 * @return {Object}          The cell's scope
 	 */
 	getTableCellScope = function( element ) {
 		var cellClasses = ".qv-st-data-cell, .qv-st-header-cell",
@@ -1641,10 +1642,10 @@ define([
 		/**
 		 * Add a new dimension menu item to the provided menu
 		 *
-		 * @param  {Object}  menu Menu to add to
-		 * @param  {Object}  table Table context
-		 * @param  {Object}  fieldName Field name
-		 * @param  {Object}  colIndex Optional. Column index
+		 * @param  {Object}  menu        Menu to add to
+		 * @param  {Object}  table       Table context
+		 * @param  {Object}  fieldName   Field name
+		 * @param  {Object}  colIndex    Optional. Column index
 		 * @param  {Boolean} isDimension Optional. Whether this field is a dimension.
 		 * @return {Void}
 		 */
@@ -1683,10 +1684,10 @@ define([
 		/**
 		 * Add a new measure menu item to the provided menu
 		 *
-		 * @param  {Object}  menu Menu to add to
-		 * @param  {Object}  table Table context
-		 * @param  {Object}  fieldName Field name
-		 * @param  {Object}  colIndex Optional. Column index
+		 * @param  {Object}  menu        Menu to add to
+		 * @param  {Object}  table       Table context
+		 * @param  {Object}  fieldName   Field name
+		 * @param  {Object}  colIndex    Optional. Column index
 		 * @param  {Boolean} isDimension Optional. Whether this field is a dimension.
 		 * @return {Void}
 		 */
@@ -2202,16 +2203,16 @@ define([
 	/**
 	 * Handle conversions from a different visualization type
 	 *
-	 * @param  {Object} exportedFmt Export model from the originating visualization
+	 * @param  {Object} exportedFmt       Export model from the originating visualization
 	 * @param  {Object} initialProperties Initial properties of this extension
-	 * @param  {Object} ext Extension object
-	 * @param  {String} hyperCubePath Hypercube path (?)
-	 * @return {Object} Export model
+	 * @param  {Object} ext               Extension object
+	 * @param  {String} hyperCubePath     Hypercube path (?)
+	 * @return {Object}                   Export model
 	 */
 	importProperties = function( exportedFmt, initialProperties, ext, hyperCubePath ) {
 		var retval = objectConversion.hypercube.importProperties.apply(this, arguments);
 
-		// Overwrite title properties
+		// Overwrite metadata
 		retval.qProperty.showTitles = initProps.showTitles || false;
 		retval.qProperty.title = initProps.title;
 		retval.qProperty.subtitle = initProps.subtitle;
@@ -2242,7 +2243,6 @@ define([
 		// Reset metadata
 		retval.properties.showTitles = true;
 		retval.properties.title = "";
-		retval.properties.subtitle = "";
 
 		return retval;
 	};
