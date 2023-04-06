@@ -1261,7 +1261,7 @@ define([
 				var noOfRows = model.layout.qHyperCube.qSize.qcy;
 
 				// Set num rows
-				$scope.footnote = "".concat(noOfRows, noOfRows !== 1 ? " rows" : " row");
+				$scope.footnote = "".concat(Number(noOfRows).toLocaleString(), noOfRows !== 1 ? " rows" : " row");
 			});
 		} else {
 			$scope.footnote = "";
