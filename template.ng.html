@@ -27,7 +27,11 @@
 		</div>
 	</div>
 
-	<div class="qv-footer-wrapper" ng-if="footnote">
-		<footer class="qv-object-footnote qvt-visualization-footnote" ng-attr-title="{{footnote}}">{{footnote}}</footer>
+	<div class="qv-footer-wrapper" ng-if="footnotes.length">
+		<footer class="qv-object-footnote qvt-visualization-footnote">
+			<div class="footnotes">
+				<span class="footnote" ng-repeat="footnote in footnotes" ng-attr-title="{{footnote}}" ng-bind-html="footnote"></span>
+			</div>
+		</footer>
 	</div>
 </div>

@@ -78,6 +78,10 @@
 	background-color: rgb(251, 251, 251);
 }
 
+.qs-emergo-table-inspector .qv-footer-wrapper .footnote:nth-of-type(n+2) {
+	margin-left: 24px;
+}
+
 /* Card-based themes */
 
 .qv-client.qv-card #qv-stage-container #grid .qv-object-qs-emergo-table-inspector .qv-object-header.thin,

@@ -1254,17 +1254,25 @@ define([
 	 * @return {Void}
 	 */
 	setCustomFootnote = function( $scope ) {
+		var notes = [];
+
 		if ($scope.vizId) {
 
 			// Get the embedded visualization's object model
 			app.getObject($scope.vizId).then( function( model ) {
-				var noOfRows = model.layout.qHyperCube.qSize.qcy;
+				var noOfCols = model.layout.qHyperCube.qSize.qcx,
+				    noOfRows = model.layout.qHyperCube.qSize.qcy;
 
-				// Set num rows
-				$scope.footnote = "".concat(Number(noOfRows).toLocaleString(), noOfRows !== 1 ? " rows" : " row");
+				// Add num rows
+				notes.push("".concat(Number(noOfRows).toLocaleString(), noOfRows !== 1 ? " rows" : " row"));
+
+				// Add full size
+				notes.push("Full: ".concat(Number(noOfCols).toLocaleString(), " × ", Number(noOfRows).toLocaleString()));
+			}).then( function() {
+				$scope.footnotes = notes;
 			});
 		} else {
-			$scope.footnote = "";
+			$scope.footnotes = [];
 		}
 	},
 
@@ -1338,7 +1346,7 @@ define([
 					$scope.vizId = undefined;
 
 					// Reset custom footnote
-					$scope.footnote = "";
+					$scope.footnotes = [];
 				}
 			}
 		});
@@ -1353,7 +1361,7 @@ define([
 		$scope.addedMeasures = $scope.layout.props.addedMeasures || [];
 
 		// Custom footnote
-		$scope.footnote = "";
+		$scope.footnotes = [];
 
 		// Initiate first data table when set
 		getAppTableByName($scope.layout.props.tableName).then( function( tableData ) {
