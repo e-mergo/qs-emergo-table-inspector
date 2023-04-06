@@ -1454,8 +1454,8 @@ define([
 				"Timestamp($1)"
 			]
 		},
-		generalFunctions: {
-			label: "General functions",
+		generalNumericFunctions: {
+			label: "General numeric functions",
 			options: [
 				"BitCount($1)",
 				"Ceil($1)",
