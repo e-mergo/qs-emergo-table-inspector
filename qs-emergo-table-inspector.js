@@ -396,7 +396,7 @@ define([
 	 * @return {Promise}          Properties are saved
 	 */
 	prepareEmbeddedViz = function( $scope, tableData ) {
-		var dfd = $q.defer(), newProps = util.copy(initProps);
+		var dfd = $q.defer(), newProps = util.copy(initProps), loadNewTable;
 
 		// Reset table name and dimensions
 		newProps.props.tableName = tableData.value;
@@ -406,14 +406,12 @@ define([
 		// Reset existing properties
 		if ($scope.vizId) {
 
-			// Use the stored manipulations when preparing the same table
-			if ($scope.layout.props.tableName === tableData.value) {
-				newProps.props.removedFields = $scope.removedFields;
-				newProps.props.addedMeasures = $scope.addedMeasures;
-			} else {
-				$scope.removedFields = [];
-				$scope.addedMeasures = [];
-			}
+			// Remove stored manipulations
+			newProps.props.removedFields = [];
+			newProps.props.addedMeasures = [];
+
+			// Reloading the table
+			loadNewTable = true;
 
 			dfd.resolve();
 
@@ -421,8 +419,11 @@ define([
 		} else {
 
 			// Set the stored manipulations. Maybe stored values are present
-			newProps.props.removedFields = $scope.removedFields = $scope.layout.props.removedFields || [];
-			newProps.props.addedMeasures = $scope.addedMeasures = $scope.layout.props.addedMeasures || [];
+			newProps.props.removedFields = $scope.layout.props.removedFields || [];
+			newProps.props.addedMeasures = $scope.layout.props.addedMeasures || [];
+
+			// Loading a new or previous table
+			loadNewTable = $scope.layout.props.tableName !== tableData.value;
 
 			// Get the object's properties
 			$scope.object.model.getProperties().then( function( props ) {
@@ -437,7 +438,7 @@ define([
 
 		// Return the prepared properties
 		return dfd.promise.then( function() {
-			var tableDimensions = $scope.layout.props.tableDimensions.length ? $scope.layout.props.tableDimensions.concat(newProps.props.removedFields) : tableData.qData.qFields.map(a => a.qName),
+			var tableDimensions = loadNewTable ? tableData.qData.qFields.map(a => a.qName) : ($scope.layout.props.tableDimensions || []).concat(newProps.props.removedFields),
 			    actualRemovedFields = [], actualAddedMeasures = [];
 
 			// Walk table dimensions
@@ -475,8 +476,8 @@ define([
 			});
 
 			// Correct the stored manipulations
-			newProps.props.removedFields = actualRemovedFields;
-			newProps.props.addedMeasures = actualAddedMeasures;
+			newProps.props.removedFields = $scope.removedFields = actualRemovedFields;
+			newProps.props.addedMeasures = $scope.addedMeasures = actualAddedMeasures;
 
 			// Add columns to ordering and sorting lists
 			["qColumnOrder", "qInterColumnSortOrder"].forEach( function( a ) {
@@ -633,11 +634,6 @@ define([
 	 */
 	reloadEmbeddedViz = function( $scope ) {
 		return getAppTableByName($scope.layout.props.tableName).then( function( tableData ) {
-
-			// When reloading, clear the stored manipulations
-			$scope.removedFields = [];
-			$scope.addedMeasures = [];
-
 			return selectTable($scope, tableData);
 		});
 	},
@@ -1325,6 +1321,10 @@ define([
 			on: {
 				enterLoading: function( lifecycle ) {
 					$scope.loading = true;
+
+					// When (re)loading, clear any stored manipulations
+					$scope.removedFields = [];
+					$scope.addedMeasures = [];
 				},
 				leaveLoading: function( lifecycle ) {
 					$scope.loading = false;
