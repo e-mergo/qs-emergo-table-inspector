@@ -304,7 +304,7 @@ define([
 	selectTable = function( $scope, tableData ) {
 
 		// Trigger loading state
-		$scope.fsm.select();
+		$scope.fsm.select(tableData);
 
 		// Update extension's hypercube and properties
 		return prepareEmbeddedViz($scope, tableData).then( function( props ) {
@@ -1260,14 +1260,21 @@ define([
 
 			// Get the embedded visualization's object model
 			app.getObject($scope.vizId).then( function( model ) {
-				var noOfCols = model.layout.qHyperCube.qSize.qcx,
+				var noOfTableCols = $scope.tableData.qData.qFields.length,
+				    noOfTableRows = Math.max.apply(null, $scope.tableData.qData.qFields.map(a => a.qnRows)),
+				    noOfCols = model.layout.qHyperCube.qSize.qcx,
 				    noOfRows = model.layout.qHyperCube.qSize.qcy;
 
 				// Add num rows
 				notes.push("".concat(Number(noOfRows).toLocaleString(), noOfRows !== 1 ? " rows" : " row"));
 
 				// Add full size
-				notes.push("Full: ".concat(Number(noOfCols).toLocaleString(), " × ", Number(noOfRows).toLocaleString()));
+				notes.push("Full: ".concat(Number(noOfTableCols).toLocaleString(), " × ", Number(noOfTableRows).toLocaleString()));
+
+				// Add visible size
+				if (! (noOfTableCols === noOfCols && noOfTableRows === noOfRows)) {
+					notes.push("Visible: ".concat(Number(noOfCols).toLocaleString(), " × ", Number(noOfRows).toLocaleString()));
+				}
 			}).then( function() {
 				$scope.footnotes = notes;
 			});
@@ -1327,8 +1334,11 @@ define([
 				from: "TABLE", to: "IDLE", name: "CLOSE"
 			}],
 			on: {
-				enterLoading: function( lifecycle ) {
+				enterLoading: function( lifecycle, tableData ) {
 					$scope.loading = true;
+
+					// Keep table data
+					$scope.tableData = tableData;
 
 					// When (re)loading, clear any stored manipulations
 					$scope.removedFields = [];
@@ -1353,6 +1363,9 @@ define([
 
 		// Container id
 		$scope.containerId = "qs-emergo-table-inspector-".concat($scope.$id);
+
+		// The table data
+		$scope.tableData = false;
 
 		// Removed fields
 		$scope.removedFields = $scope.layout.props.removedFields || [];
