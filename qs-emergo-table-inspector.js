@@ -280,17 +280,7 @@ define([
 
 		// Update the extension's object with initial properties
 		return updateExtensionVisualization($scope, util.copy(initProps)).then( function() {
-
-			// Get the table's object
-			return app.visualization.get($scope.vizId).then( function( object ) {
-
-				// Break engine connection and destroy scope
-				object.close().then( function() {
-
-					// Trigger idle state
-					$scope.fsm.close();
-				});
-			});
+			return $scope.fsm.close();
 		}).catch(console.error);
 	},
 
@@ -1353,16 +1343,28 @@ define([
 				afterOpen: function() {
 					$scope.loading = false;
 				},
-				leaveTable: function() {
-
-					// Clear inner html
-					$("#".concat($scope.containerId)).empty();
-
-					// Detach id from scope
-					$scope.vizId = undefined;
+				leaveTable: function( lifecycle ) {
 
 					// Reset custom footnote
 					$scope.footnotes = [];
+
+					// Bail when loading a new table
+					if ("SELECT" === lifecycle.name) {
+						return;
+					}
+
+					// Get the embedded visualization
+					return app.getObject($scope.vizId).then( function( model ) {
+
+						// Break engine connection and destroy scope
+						model.close();
+
+						// Clear inner html
+						$("#".concat($scope.containerId)).empty();
+
+						// Detach id from scope
+						$scope.vizId = undefined;
+					});
 				}
 			}
 		});
@@ -2276,13 +2278,9 @@ define([
 		beforeDestroy: function() {
 			var $scope = this.$scope;
 
-			// Get the embedded visualization
+			// Destroy the visualization
 			if ($scope.vizId) {
-				app.getObject($scope.vizId).then( function( model ) {
-
-					// Break engine connection and destroy scope
-					model.close();
-				});
+				$scope.fsm.close();
 			}
 		},
 
