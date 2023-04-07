@@ -886,9 +886,7 @@ define([
 			if (direction) {
 
 				// Find field in hypercube
-				ix = props.qHyperCubeDef.qColumnOrder.find( function( a, ix ) {
-					return ix === position;
-				});
+				ix = props.qHyperCubeDef.qColumnOrder.find(( a, ix ) => ix === position);
 
 				// Get field indices to remove
 				fieldIndicesToRemove = direction > 0 ? props.qHyperCubeDef.qColumnOrder.slice(position + 1) : props.qHyperCubeDef.qColumnOrder.slice(0, position);
@@ -906,9 +904,7 @@ define([
 				// Add left/right fields to the table's hidden fields list
 				$scope.removedFields = _.uniq($scope.removedFields.concat(props.qHyperCubeDef.qDimensions.filter( function( a, ix ) {
 					return a.isField && -1 !== fieldIndicesToRemove.indexOf(ix);
-				}).map( function( a ) {
-					return a.qDef.qFieldDefs[0];
-				})));
+				}).map(a => a.qDef.qFieldDefs[0])));
 
 				// Remove measures
 				$scope.addedMeasures = $scope.addedMeasures.filter( function( a, ix ) {
@@ -924,11 +920,9 @@ define([
 				});
 
 				// Get field indices to remove
-				fieldIndicesToRemove = props.qHyperCubeDef.qDimensions.map( function( a, ix ) {
-					return ix;
-				}).filter( function( a ) {
-					return a !== ix;
-				});
+				fieldIndicesToRemove = props.qHyperCubeDef.qDimensions.map((a, ix) => ix).filter(a => a !== ix).concat(props.qHyperCubeDef.qMeasures.map( function( a, ix ) {
+					return props.qHyperCubeDef.qDimensions.length + ix;
+				}));
 
 				// Keep the field from the dimension list
 				qDimensions = props.qHyperCubeDef.qDimensions.splice(ix, 1);
