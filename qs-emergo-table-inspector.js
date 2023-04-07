@@ -344,9 +344,10 @@ define([
 	 * Return a new definition of a hypercube dimension
 	 *
 	 * @param  {String|Object} dimension Dimension expression or details
+	 * @param  {String}        label     Optional. Label expression
 	 * @return {Object}                  Dimension definition
 	 */
-	createHyperCubeDefDimension = function( dimension ) {
+	createHyperCubeDefDimension = function( dimension, label ) {
 		var isDimension = "string" !== typeof dimension,
 		    expression = isDimension ? parseExpression(dimension) : dimension;
 
@@ -357,7 +358,7 @@ define([
 			qDef: {
 				cId: qUtil.generateId(),
 				qFieldDefs: [isDimension ? "=".concat(expression) : expression],
-				qFieldLabels: [expression],
+				qFieldLabels: [label || expression],
 				autoSort: true,
 				qSortCriterias: [{
 					qSortByAscii: 1
@@ -369,18 +370,20 @@ define([
 	/**
 	 * Return a new definition of a hypercube measure
 	 *
-	 * @param  {Object} measure Measure details
-	 * @return {Object}         Measure definition
+	 * @param  {Object|String} measure Measure details or expression
+	 * @param  {String}        label   Optional. Label expression
+	 * @return {Object}                Measure definition
 	 */
-	createHyperCubeDefMeasure = function( measure ) {
-		var expression = parseExpression(measure);
+	createHyperCubeDefMeasure = function( measure, label ) {
+		var isExpression = "string" === typeof measure,
+		    expression = isExpression ? measure : parseExpression(measure);
 
 		return {
 			measure: measure,
 			qDef: {
 				cId: qUtil.generateId(),
 				qDef: expression,
-				qLabel: expression
+				qLabel: label || expression
 			},
 			qSortBy: {
 				qSortByNumeric: -1
