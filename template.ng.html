@@ -1,4 +1,4 @@
-<div class="qs-emergo-table-inspector" ng-class="{'table-selected': vizId && !object.inEditState(), 'loading': loading, 'no-interaction': options.noInteraction}">
+<div class="qs-emergo-table-inspector" ng-class="{'table-selected': tableInspectorId && !object.inEditState(), 'loading': loading, 'no-interaction': options.noInteraction}">
 	<div class="inspector-loading">
 		<div class="qv-loader modal-loader"></div>
 	</div>
@@ -19,7 +19,7 @@
 				</span>
 			</p>
 
-			<p ng-if="object.inEditState() && vizId && canConvertToTable()" class="incomplete-text">
+			<p ng-if="object.inEditState() && tableInspectorId && canConvertToTable()" class="incomplete-text">
 				<span>or
 					<button class="lui-button convert-to-table" qva-activate="convertToTable()" q-translation="contextMenu.convertTo, Table"></button>
 				</span>

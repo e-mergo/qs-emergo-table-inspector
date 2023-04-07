@@ -137,10 +137,10 @@ define([
 	/**
 	 * Return picked properties for the table object
 	 *
-	 * @param  {Object} props Properties
-	 * @return {Object}       Picked properties
+	 * @param  {Object} objProps Properties
+	 * @return {Object}          Picked properties
 	 */
-	getTablePropsFromObjProps = function( objProps ) {
+	getInspectorTablePropsFromObjProps = function( objProps ) {
 		var newProps = _.pick(objProps, "qHyperCubeDef", "props");
 
 		// Define additional table properties
@@ -258,7 +258,7 @@ define([
 			props.qHyperCubeDef.qDimensions.filter(a => a.isField).forEach( function( a ) {
 
 				// Rebuild the table structure. This property is used to determine whether
-				// the table is changed in the datamodel. See `createEmbeddedViz()`.
+				// the table is changed in the datamodel. See `createInspectorTableVisualization()`.
 				props.props.tableStructure.push(a.qDef.qFieldDefs[0]);
 			});
 		}
@@ -294,10 +294,10 @@ define([
 	selectTable = function( $scope, tableData ) {
 
 		// Update extension's hypercube and properties
-		return prepareEmbeddedViz($scope, tableData).then( function( props ) {
+		return prepareInspectorTableVisualization($scope, tableData).then( function( props ) {
 
-			// Create or update the embedded visualization
-			var promise = $scope.vizId ? updateEmbeddedViz($scope, props) : createEmbeddedViz($scope, props);
+			// Create or update the inspector table
+			var promise = $scope.tableInspectorId ? updateInspectorTableVisualization($scope, props) : createInspectorTableVisualization($scope, props);
 
 			// When table is created/updated
 			promise.then( function() {
@@ -305,8 +305,8 @@ define([
 				// Trigger table state
 				$scope.fsm.open();
 
-				// Get the embedded visualization's properties
-				return getEffectivePropertiesById($scope.vizId).then( function( modelProps ) {
+				// Get the inspector table's properties
+				return getEffectivePropertiesById($scope.tableInspectorId).then( function( modelProps ) {
 
 					// Keep dimensions
 					props.props.tableDimensions = modelProps.qHyperCubeDef.qDimensions.map(a => a.dimension);
@@ -385,7 +385,7 @@ define([
 	 * @param  {Object} tableData Table data
 	 * @return {Promise}          Properties are saved
 	 */
-	prepareEmbeddedViz = function( $scope, tableData ) {
+	prepareInspectorTableVisualization = function( $scope, tableData ) {
 		var dfd = $q.defer(), newProps = util.copy(initProps), loadNewTable;
 
 		// Reset table name and dimensions
@@ -394,7 +394,7 @@ define([
 		newProps.qHyperCubeDef.qMeasures = [];
 
 		// Reset existing properties
-		if ($scope.vizId) {
+		if ($scope.tableInspectorId) {
 
 			// Remove stored manipulations
 			newProps.props.removedFields = [];
@@ -499,13 +499,13 @@ define([
 	},
 
 	/**
-	 * Create a new embedded visualization object
+	 * Create a new inspector table object
 	 *
 	 * @param  {Object} $scope Extension scope
 	 * @return {Promise}       Table is created
 	 */
-	createEmbeddedViz = function( $scope, props ) {
-		var newProps = getTablePropsFromObjProps(props);
+	createInspectorTableVisualization = function( $scope, props ) {
+		var newProps = getInspectorTablePropsFromObjProps(props);
 
 		// Create viz-on-the-fly with selected patches
 		return app.visualization.create("table", [], newProps).then( function( object ) {
@@ -537,14 +537,14 @@ define([
 						if (! fieldNames.length) {
 							resetExtensionVisualization($scope);
 
-						// Structure was changed, so reload the embedded visualization
+						// Structure was changed, so reload the inspector table
 						} else if (hasNewStructure) {
-							reloadEmbeddedViz($scope);
+							reloadInspectorTableVisualization($scope);
 						}
 					});
 
 					// Synchronize table properties to the extension
-					getEffectivePropertiesById($scope.vizId).then( function( props ) {
+					getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
 
 						// Keep column ordering and sorting
 						// On manual column ordering dimensions and fields are just reordered in the
@@ -573,30 +573,30 @@ define([
 			});
 
 			// Store visualization id for future reference
-			$scope.vizId = object.id;
+			$scope.tableInspectorId = object.id;
 
 			return showed;
 		});
 	},
 
 	/**
-	 * Updates the embedded visualization object
+	 * Update the inspector table object
 	 *
 	 * @param  {Object} $scope Extension scope
 	 * @param  {Object} props  Propeprties with updates
 	 * @return {Promise}       Table is updated
 	 */
-	updateEmbeddedViz = function( $scope, props ) {
+	updateInspectorTableVisualization = function( $scope, props ) {
 		var dfd = $q.defer(), patcher = getPatcher("dataTable"), patches;
 
 		// Get the table's object model
-		return app.getObject($scope.vizId).then( function( model ) {
+		return app.getObject($scope.tableInspectorId).then( function( model ) {
 
 			// Remove soft patches just before updating
 			model.clearSoftPatches();
 
 			// Define patches from props
-			patches = patcher(getTablePropsFromObjProps(props));
+			patches = patcher(getInspectorTablePropsFromObjProps(props));
 
 			// Apply patches
 			return model.applyPatches(patches);
@@ -610,28 +610,28 @@ define([
 	 * @param  {Object} props  Properties with updates
 	 * @return {Promise}       Table is updated
 	 */
-	updateEmbeddedVizAndExtension = function( $scope, props ) {
-		return updateEmbeddedViz($scope, props).then( function() {
+	updateInspectorTableVisualizationAndExtension = function( $scope, props ) {
+		return updateInspectorTableVisualization($scope, props).then( function() {
 			return updateExtensionVisualization($scope, props);
 		});
 	},
 
 	/**
-	 * Reload the embedded visualization object
+	 * Reload the inspector table object
 	 *
 	 * @param  {Object} $scope Extension scope
 	 * @return {Promise}       Table is reloaded
 	 */
-	reloadEmbeddedViz = function( $scope ) {
+	reloadInspectorTableVisualization = function( $scope ) {
 		return getAppTableByName($scope.layout.props.tableName).then( function( tableData ) {
 			return $scope.fsm.select(tableData);
 		});
 	},
 
 	/**
-	 * Convert the extension to the embedded visualization
+	 * Convert the extension to a straight table based on the inspector table
 	 *
-	 * The embedded visualization's object is not removed in order to
+	 * The inspector table's object is not removed in order to
 	 * keep the option to use the undo functionality in the app.
 	 *
 	 * Actual convert logic does exist in the extension context object,
@@ -646,22 +646,16 @@ define([
 	 * @param  {Object} $scope Extension scope
 	 * @return {Promise}       Extension is converted
 	 */
-	convertExtensionToEmbeddedViz = function( $scope ) {
+	convertExtensionToStraightTableVisualization = function( $scope ) {
 
-		// Get the embedded visualization's properties
-		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
+		// Get the inspector table's properties
+		return getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
 
 			// Populate dimension column id values
-			props.qHyperCubeDef.qDimensions = props.qHyperCubeDef.qDimensions.map( function( a ) {
-				a.qDef.cId = qUtil.generateId();
-				return a;
-			});
+			props.qHyperCubeDef.qDimensions = props.qHyperCubeDef.qDimensions;
 
 			// Populate measure column id values
-			props.qHyperCubeDef.qMeasures = props.qHyperCubeDef.qMeasures.map( function( a ) {
-				a.qDef.cId = qUtil.generateId();
-				return a;
-			});
+			props.qHyperCubeDef.qMeasures = props.qHyperCubeDef.qMeasures;
 
 			// Remove inspector properties
 			delete props.props;
@@ -672,7 +666,7 @@ define([
 			props.title = "";
 			props.subtitle = "";
 
-			// Keep the extension's object id
+			// Updating the extension's object
 			props.qInfo.qId = $scope.object.model.id;
 
 			// Fully overwrite the extension's properties
@@ -681,7 +675,7 @@ define([
 	},
 
 	/**
-	 * Add a field to the embedded visualization
+	 * Add a field to the inspector table
 	 *
 	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
@@ -694,8 +688,8 @@ define([
 		// Remove the field from the table's hidden fields list
 		$scope.removedFields = _.difference($scope.removedFields, [fieldName]);
 
-		// Get the embedded visualization's properties
-		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
+		// Get the inspector table's properties
+		return getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef,
 				props: {
@@ -724,12 +718,12 @@ define([
 			});
 
 			// Update props on the table and extension
-			return updateEmbeddedVizAndExtension($scope, newProps);
+			return updateInspectorTableVisualizationAndExtension($scope, newProps);
 		}).catch(console.error);
 	},
 
 	/**
-	 * Add all removed fields to the embedded visualization
+	 * Add all removed fields to the inspector table
 	 *
 	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
@@ -738,8 +732,8 @@ define([
 	 */
 	addAllTableFields = function( $scope, tableData, position ) {
 
-		// Get the embedded visualization's properties
-		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
+		// Get the inspector table's properties
+		return getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef,
 				props: {
@@ -775,12 +769,12 @@ define([
 			$scope.removedFields = [];
 
 			// Update props on the table and extension
-			return updateEmbeddedVizAndExtension($scope, newProps);
+			return updateInspectorTableVisualizationAndExtension($scope, newProps);
 		}).catch(console.error);
 	},
 
 	/**
-	 * Remove a field from the embedded visualization
+	 * Remove a field from the inspector table
 	 *
 	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
@@ -792,8 +786,8 @@ define([
 		// Add the field to the table's hidden fields list
 		$scope.removedFields = _.uniq($scope.removedFields.concat([fieldName]));
 
-		// Get the embedded visualization's properties
-		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
+		// Get the inspector table's properties
+		return getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef,
 				props: {
@@ -822,13 +816,13 @@ define([
 				});
 
 				// Update props on the table and extension
-				return updateEmbeddedVizAndExtension($scope, newProps);
+				return updateInspectorTableVisualizationAndExtension($scope, newProps);
 			}
 		}).catch(console.error);
 	},
 
 	/**
-	 * Remove all fields from the embedded visualization
+	 * Remove all fields from the inspector table
 	 *
 	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
@@ -839,8 +833,8 @@ define([
 		// Add all fields to the table's hidden fields list
 		$scope.removedFields = tableData.qData.qFields.map(a => a.qName);
 
-		// Get the embedded visualization's properties
-		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
+		// Get the inspector table's properties
+		return getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef,
 				props: {
@@ -867,12 +861,12 @@ define([
 			});
 
 			// Update props on the table and extension
-			return updateEmbeddedVizAndExtension($scope, newProps);
+			return updateInspectorTableVisualizationAndExtension($scope, newProps);
 		}).catch(console.error);
 	},
 
 	/**
-	 * Remove all columns but the indicated field from the embedded visualization
+	 * Remove all columns but the indicated field from the inspector table
 	 *
 	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
@@ -884,8 +878,8 @@ define([
 	removeOtherTableColumns = function( $scope, tableData, fieldName, position, direction ) {
 		direction = direction || 0;
 
-		// Get the embedded visualization's properties
-		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
+		// Get the inspector table's properties
+		return getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
 			var ix, fieldIndicesToRemove, qDimensions, qMeasures, newProps;
 
 			// Remove with direction
@@ -975,13 +969,13 @@ define([
 				});
 
 				// Update props on the table and extension
-				return updateEmbeddedVizAndExtension($scope, newProps);
+				return updateInspectorTableVisualizationAndExtension($scope, newProps);
 			}
 		}).catch(console.error);
 	},
 
 	/**
-	 * Add a dimension to the embedded visualization
+	 * Add a dimension to the inspector table
 	 *
 	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
@@ -991,8 +985,8 @@ define([
 	 */
 	addTableDimension = function( $scope, tableData, dimension, position ) {
 
-		// Get the embedded visualization's properties
-		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
+		// Get the inspector table's properties
+		return getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef
 			};
@@ -1018,12 +1012,12 @@ define([
 			});
 
 			// Update props on the table and extension
-			return updateEmbeddedVizAndExtension($scope, newProps);
+			return updateInspectorTableVisualizationAndExtension($scope, newProps);
 		}).catch(console.error);
 	},
 
 	/**
-	 * Remove a dimension from the embedded visualization
+	 * Remove a dimension from the inspector table
 	 *
 	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
@@ -1032,8 +1026,8 @@ define([
 	 */
 	removeTableDimension = function( $scope, tableData, position ) {
 
-		// Get the embedded visualization's properties
-		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
+		// Get the inspector table's properties
+		return getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef
 			},
@@ -1060,13 +1054,13 @@ define([
 				});
 
 				// Update props on the table and extension
-				return updateEmbeddedVizAndExtension($scope, newProps);
+				return updateInspectorTableVisualizationAndExtension($scope, newProps);
 			}
 		}).catch(console.error);
 	},
 
 	/**
-	 * Remove all dimensions from the embedded visualization
+	 * Remove all dimensions from the inspector table
 	 *
 	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
@@ -1074,8 +1068,8 @@ define([
 	 */
 	removeAllTableDimensions = function( $scope, tableData ) {
 
-		// Get the embedded visualization's properties
-		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
+		// Get the inspector table's properties
+		return getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef
 			},
@@ -1099,12 +1093,12 @@ define([
 			});
 
 			// Update props on the table and extension
-			return updateEmbeddedVizAndExtension($scope, newProps);
+			return updateInspectorTableVisualizationAndExtension($scope, newProps);
 		}).catch(console.error);
 	},
 
 	/**
-	 * Add a measure to the embedded visualization
+	 * Add a measure to the inspector table
 	 *
 	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
@@ -1117,8 +1111,8 @@ define([
 		// Add the measure to the table's added measures list
 		$scope.addedMeasures = $scope.addedMeasures.concat(measure);
 
-		// Get the embedded visualization's properties
-		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
+		// Get the inspector table's properties
+		return getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef,
 				props: {
@@ -1142,12 +1136,12 @@ define([
 			});
 
 			// Update props on the table and extension
-			return updateEmbeddedVizAndExtension($scope, newProps);
+			return updateInspectorTableVisualizationAndExtension($scope, newProps);
 		}).catch(console.error);
 	},
 
 	/**
-	 * Remove a measure from the embedded visualization
+	 * Remove a measure from the inspector table
 	 *
 	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
@@ -1161,8 +1155,8 @@ define([
 			return removeAllTableMeasures($scope, tableData);
 		}
 
-		// Get the embedded visualization's properties
-		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
+		// Get the inspector table's properties
+		return getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef,
 				props: {}
@@ -1194,13 +1188,13 @@ define([
 				});
 
 				// Update props on the table and extension
-				return updateEmbeddedVizAndExtension($scope, newProps);
+				return updateInspectorTableVisualizationAndExtension($scope, newProps);
 			}
 		}).catch(console.error);
 	},
 
 	/**
-	 * Remove all measures from the embedded visualization
+	 * Remove all measures from the inspector table
 	 *
 	 * @param  {Object} $scope    Extension scope
 	 * @param  {Object} tableData Table data
@@ -1211,8 +1205,8 @@ define([
 		// Clear the table's added measures list
 		$scope.addedMeasures = [];
 
-		// Get the embedded visualization's properties
-		return getEffectivePropertiesById($scope.vizId).then( function( props ) {
+		// Get the inspector table's properties
+		return getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef,
 				props: {
@@ -1234,7 +1228,7 @@ define([
 			});
 
 			// Update props on the table and extension
-			return updateEmbeddedVizAndExtension($scope, newProps);
+			return updateInspectorTableVisualizationAndExtension($scope, newProps);
 		}).catch(console.error);
 	},
 
@@ -1247,10 +1241,11 @@ define([
 	setCustomFootnote = function( $scope ) {
 		var notes = [];
 
-		if ($scope.vizId) {
+		// Table inspector visualization
+		if ($scope.tableInspectorId) {
 
-			// Get the embedded visualization's object model
-			app.getObject($scope.vizId).then( function( model ) {
+			// Get the inspector table's object model
+			app.getObject($scope.tableInspectorId).then( function( model ) {
 				var noOfTableCols = $scope.tableData.qData.qFields.length,
 				    noOfTableRows = Math.max.apply(null, $scope.tableData.qData.qFields.map(a => a.qnRows)),
 				    noOfCols = model.layout.qHyperCube.qSize.qcx,
@@ -1353,8 +1348,8 @@ define([
 						return;
 					}
 
-					// Get the embedded visualization
-					return app.getObject($scope.vizId).then( function( model ) {
+					// Get the inspector table
+					return app.getObject($scope.tableInspectorId).then( function( model ) {
 
 						// Break engine connection and destroy scope
 						model.close();
@@ -1363,7 +1358,7 @@ define([
 						$("#".concat($scope.containerId)).empty();
 
 						// Detach id from scope
-						$scope.vizId = undefined;
+						$scope.tableInspectorId = undefined;
 					});
 				}
 			}
@@ -1421,7 +1416,7 @@ define([
 		 */
 		$scope.convertToTable = function() {
 			if ($scope.canConvertToTable()) {
-				convertExtensionToEmbeddedViz($scope);
+				convertExtensionToStraightTableVisualization($scope);
 			}
 		};
 
@@ -1431,7 +1426,7 @@ define([
 		 * @return {Void}
 		 */
 		$scope.open = function() {
-			if (! $scope.object.inEditState() && ! $scope.options.noInteraction && ! $scope.vizId) {
+			if (! $scope.object.inEditState() && ! $scope.options.noInteraction && ! $scope.tableInspectorId) {
 				popover.isActive() ? popover.close() : popover.open();
 			}
 		};
@@ -1753,8 +1748,8 @@ define([
 		// When we're in Edit mode
 		if (object.inEditState()) {
 
-			// When the embedded visualization is active
-			if ($scope.vizId) {
+			// When the inspector table is active
+			if ($scope.tableInspectorId) {
 
 				// Convert to table
 				menu.addItem({
@@ -1762,7 +1757,7 @@ define([
 					tid: "convert-to-table",
 					icon: "lui-icon lui-icon--table",
 					select: function() {
-						convertExtensionToEmbeddedViz($scope);
+						convertExtensionToStraightTableVisualization($scope);
 					}
 				});
 			}
@@ -1774,8 +1769,8 @@ define([
 		// Query tables, then add menu items
 		getAppTables().then( function( tables ) {
 
-			// When the embedded visualization is active
-			if ($scope.vizId) {
+			// When the inspector table is active
+			if ($scope.tableInspectorId) {
 
 				/**
 				 * Holds the Switch table menu
@@ -1941,7 +1936,7 @@ define([
 							tid: "reload-table",
 							icon: "lui-icon lui-icon--reload",
 							select: function() {
-								reloadEmbeddedViz($scope);
+								reloadInspectorTableVisualization($scope);
 							}
 						});
 
@@ -2178,7 +2173,7 @@ define([
 					tid: "export",
 					icon: "lui-icon lui-icon--export",
 					select: function() {
-						app.getObject($scope.vizId).then( function( model ) {
+						app.getObject($scope.tableInspectorId).then( function( model ) {
 
 							// Open export modal
 							exportDialog.show(model);
@@ -2237,12 +2232,12 @@ define([
 	exportProperties = function( propertyTree, hyperCubePath ) {
 		var retval = objectConversion.hypercube.exportProperties.apply(this, arguments);
 
-		// Add dimensions
+		// Add dimensions from the table inspector
 		propertyTree.qProperty.props.tableDimensions.forEach( function( dimension ) {
 			retval.data[0].dimensions.push(createHyperCubeDefDimension(dimension));
 		});
 
-		// Add measures
+		// Add measures from the table inspector
 		propertyTree.qProperty.props.addedMeasures.forEach( function( measure ) {
 			retval.data[0].measures.push(createHyperCubeDefMeasure(measure));
 		});
@@ -2278,8 +2273,8 @@ define([
 		beforeDestroy: function() {
 			var $scope = this.$scope;
 
-			// Destroy the visualization
-			if ($scope.vizId) {
+			// Remove the table inspector visualization
+			if ($scope.tableInspectorId) {
 				$scope.fsm.close();
 			}
 		},
@@ -2289,7 +2284,7 @@ define([
 			sharing: false,
 			snapshot: false,
 			export: false,
-			exportData: false // This applies for the app inspector. Data export is supported for the embedded visualization
+			exportData: false // This applies for the app inspector. Data export is supported for the inspector table
 		}
 	};
 });
