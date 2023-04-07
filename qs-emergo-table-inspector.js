@@ -303,9 +303,6 @@ define([
 	 */
 	selectTable = function( $scope, tableData ) {
 
-		// Trigger loading state
-		$scope.fsm.select(tableData);
-
 		// Update extension's hypercube and properties
 		return prepareEmbeddedViz($scope, tableData).then( function( props ) {
 
@@ -637,7 +634,7 @@ define([
 	 */
 	reloadEmbeddedViz = function( $scope ) {
 		return getAppTableByName($scope.layout.props.tableName).then( function( tableData ) {
-			return selectTable($scope, tableData);
+			return $scope.fsm.select(tableData);
 		});
 	},
 
@@ -1309,7 +1306,7 @@ define([
 				});
 			},
 			select: function( item ) {
-				selectTable($scope, item);
+				$scope.fsm.select(item);
 			},
 			alignTo: function() {
 				return $el.find(".open-button")[0];
@@ -1327,31 +1324,36 @@ define([
 		$scope.fsm = new util.StateMachine({
 			name: "emergoTableInspector",
 			transitions: [{
-				from: "IDLE", to: "LOADING", name: "SELECT"
+				from: "IDLE", to: "LOAD_TABLE", name: "SELECT"
 			}, {
-				from: "LOADING", to: "TABLE", name: "OPEN"
+				from: "LOAD_TABLE", to: "TABLE", name: "OPEN"
 			}, {
-				from: "LOADING", to: "IDLE", name: "CLOSE"
+				from: "LOAD_TABLE", to: "IDLE", name: "CLOSE"
 			}, {
-				from: "TABLE", to: "LOADING", name: "SELECT"
+				from: "TABLE", to: "LOAD_TABLE", name: "SELECT"
 			}, {
 				from: "TABLE", to: "IDLE", name: "CLOSE"
 			}],
 			on: {
-				enterLoading: function( lifecycle, tableData ) {
-					$scope.loading = true;
+				beforeSelect: function( lifecycle, tableData ) {
 
 					// Keep table data
 					$scope.tableData = tableData;
+				},
+				enterLoadTable: function() {
+					$scope.loading = true;
 
 					// When (re)loading, clear any stored manipulations
 					$scope.removedFields = [];
 					$scope.addedMeasures = [];
+
+					// Setup table visualization
+					return selectTable($scope, $scope.tableData);
 				},
-				leaveLoading: function( lifecycle ) {
+				afterOpen: function() {
 					$scope.loading = false;
 				},
-				enterIdle: function( lifecycle ) {
+				leaveTable: function() {
 
 					// Clear inner html
 					$("#".concat($scope.containerId)).empty();
@@ -1385,7 +1387,7 @@ define([
 
 			// Select the table when found
 			if (tableData) {
-				selectTable($scope, tableData);
+				$scope.fsm.select(tableData);
 			}
 		});
 
@@ -1617,7 +1619,7 @@ define([
 				tid: a.value,
 				icon: "lui-icon lui-icon--table",
 				select: function() {
-					selectTable($scope, a);
+					$scope.fsm.select(a);
 				}
 			});
 		},
