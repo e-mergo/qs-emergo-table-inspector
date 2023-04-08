@@ -509,10 +509,12 @@ define([
 
 		// Create viz-on-the-fly with selected patches
 		return app.visualization.create("table", [], newProps).then( function( object ) {
-			var $container = $("#".concat($scope.containerId)),
+
+			// Store visualization id for future reference
+			$scope.tableInspectorId = object.id;
 
 			// Insert object in the extension's element
-			showed = object.show($scope.containerId, {
+			return object.show($scope.containerId, {
 				/**
 				 * Act when the table is rendered
 				 *
@@ -571,11 +573,6 @@ define([
 				// When disabling selections
 				noSelections: $scope.options.noSelections
 			});
-
-			// Store visualization id for future reference
-			$scope.tableInspectorId = object.id;
-
-			return showed;
 		});
 	},
 
