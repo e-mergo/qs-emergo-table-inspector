@@ -50,6 +50,55 @@ define([
 	var app = qlik.currApp(),
 
 	/**
+	 * Holds the app's current theme data
+	 *
+	 * @type {Object}
+	 */
+	currTheme,
+
+	/**
+	 * Return a modified font size for em
+	 *
+	 * @param  {String} fontSize Font size in px
+	 * @return {String}          Font size in em
+	 */
+	getFontSizeInEm = function( fontSize ) {
+		return "".concat(parseInt(fontSize, 10) / 13, "em");
+	},
+
+	/**
+	 * Return a getter function for a theme's style
+	 *
+	 * @param  {String} objectPath Path to theme object
+	 * @return {Function}          Style property getter
+	 */
+	themeStyleGetter = function( objectPath ) {
+		/**
+		 * Return the value of a theme's style part
+		 *
+		 * @param  {String} partPath Path to object part
+		 * @param  {String} style    Style property name
+		 * @return {String}          Style property value
+		 */
+		return function getThemeStyle( partPath, style ) {
+			var themeObject = _.get(currTheme || {}, "properties.".concat(objectPath).split(".")),
+			    styleValue = _.get(themeObject, partPath.concat(".", style).split("."));
+
+			// Default to generic object style
+			if (! styleValue) {
+				styleValue = _.get(_.get(currTheme || {}, ["properties", "object"]), partPath.concat(".", style).split("."));
+			}
+
+			// Default to global style
+			if (! styleValue) {
+				styleValue = _.get(_.get(currTheme || {}, ["properties"]), [style]);
+			}
+
+			return styleValue || "";
+		};
+	},
+
+	/**
 	 * Return the extension scope
 	 *
 	 * @param  {HTMLElement} element HTML element in extension
@@ -1370,6 +1419,26 @@ define([
 		// Custom footnote
 		$scope.footnotes = [];
 
+		// Custom styles
+		$scope.styles = {};
+
+		// Watch changes in the active theme
+		$scope.$watch( function() {
+			return currTheme;
+		}, function() {
+			var getThemeStyle = themeStyleGetter("object.straightTable");
+
+			// Define theme custom styles
+			$scope.styles = {
+				footer: {
+					"font-size": getFontSizeInEm(getThemeStyle("title.footer", "fontSize")),
+					"font-family": getThemeStyle("title.footer", "fontFamily"),
+					color: getThemeStyle("title.footer", "color"),
+					"background-color": getThemeStyle("title.footer", "backgroundColor")
+				}
+			};
+		});
+
 		// Initiate first data table when set
 		getAppTableByName($scope.layout.props.tableName).then( function( tableData ) {
 
@@ -2239,6 +2308,19 @@ define([
 
 		return retval;
 	};
+
+	// Find the appprops object and subscribe to layout changes
+	// This listener remains running in memory without end, but it is only
+	// created once for all instances of this extension.
+	app.getObject("AppPropsList").then( function( obj ) {
+		obj.layoutSubscribe( function() {
+
+			// Set the current theme
+			app.theme.getApplied().then( function( theme ) {
+				currTheme = theme;
+			});
+		});
+	});
 
 	return {
 		definition: props,

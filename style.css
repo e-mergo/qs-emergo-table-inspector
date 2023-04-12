@@ -69,13 +69,16 @@
 }
 
 .qs-emergo-table-inspector .qv-footer-wrapper {
+	display: flex;
+	flex-direction: row;
+	padding: 0px !important;
 	font-weight: normal;
-	font-style: italic;
 	text-decoration: initial;
-	font-size: 0.923077em;
-	font-family: "Source Sans Pro", sans-serif;
-	color: rgba(0, 0, 0, 0.55);
-	background-color: rgb(251, 251, 251);
+}
+
+.qs-emergo-table-inspector .qv-footer-wrapper .qv-object-footnote.qvt-visualization-footnote {
+	flex: 1;
+	padding: 6px 10px;
 }
 
 .qs-emergo-table-inspector .qv-footer-wrapper .footnote:nth-of-type(n+2) {
