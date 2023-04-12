@@ -1029,14 +1029,16 @@ define([
 		return getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
 			var newProps = {
 				qHyperCubeDef: props.qHyperCubeDef
-			};
+			}, ix;
 
 			// Add dimension to the dimensions list
 			newProps.qHyperCubeDef.qDimensions.push(createHyperCubeDefDimension(dimension));
 
+			// Find dimension in hypercube
+			ix = newProps.qHyperCubeDef.qDimensions.length - 1;
+
 			// Add the dimension to ordering and sorting lists
 			["qColumnOrder", "qInterColumnSortOrder"].forEach( function( a ) {
-				var ix = newProps.qHyperCubeDef.qDimensions.length - 1;
 
 				// Update field indices considering trailing measures
 				newProps.qHyperCubeDef[a] = newProps.qHyperCubeDef[a].map( function( b ) {
@@ -1158,14 +1160,16 @@ define([
 				props: {
 					addedMeasures: $scope.addedMeasures
 				}
-			};
+			}, ix;
 
 			// Add measure to the measures list
 			newProps.qHyperCubeDef.qMeasures.push(createHyperCubeDefMeasure(measure));
 
+			// Find measure in hypercube
+			ix = newProps.qHyperCubeDef.qDimensions.length + newProps.qHyperCubeDef.qMeasures.length - 1;
+
 			// Add the measure to ordering and sorting lists
 			["qColumnOrder", "qInterColumnSortOrder"].forEach( function( a ) {
-				var ix = newProps.qHyperCubeDef.qDimensions.length + newProps.qHyperCubeDef.qMeasures.length - 1;
 
 				// Add field at position
 				if ("undefined" === typeof position) {
