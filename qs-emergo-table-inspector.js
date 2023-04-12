@@ -208,7 +208,7 @@ define([
 	 * @type {Array}
 	 */
 	pathsToPatch = {
-		dataTable: [
+		tableInspector: [
 			"/qHyperCubeDef/qDimensions",
 			"/qHyperCubeDef/qMeasures",
 			"/qHyperCubeDef/qColumnOrder",
@@ -229,15 +229,15 @@ define([
 	},
 
 	/**
-	 * Returns a helper that handles the setup of patches for a type of either 'dataTable' or 'extension'
+	 * Returns a helper that handles the setup of patches for a type of either 'tableInspector' or 'extension'
 	 *
 	 * Fields to patch are defined in the `pathsToPatch` global object.
 	 *
-	 * @param  {String} type Optional. Type of patch generator. Defaults to 'dataTable'.
+	 * @param  {String} type Optional. Type of patch generator. Defaults to 'tableInspector'.
 	 * @return {Function}    Helper for setting up patches for the type
 	 */
 	getPatcher = function( type ) {
-		type = type || "dataTable";
+		type = type || "tableInspector";
 
 		/*
 		 * Setup patches for a list of properties to save
@@ -633,7 +633,7 @@ define([
 	 * @return {Promise}       Table is updated
 	 */
 	updateInspectorTableVisualization = function( $scope, props ) {
-		var dfd = $q.defer(), patcher = getPatcher("dataTable"), patches;
+		var dfd = $q.defer(), patcher = getPatcher("tableInspector"), patches;
 
 		// Get the table's object model
 		return app.getObject($scope.tableInspectorId).then( function( model ) {
