@@ -346,23 +346,8 @@ define([
 		return prepareInspectorTableVisualization($scope, tableData).then( function( props ) {
 
 			// Create or update the inspector table
-			var promise = $scope.tableInspectorId ? updateInspectorTableVisualization($scope, props) : createInspectorTableVisualization($scope, props);
+			return $scope.tableInspectorId ? updateInspectorTableVisualization($scope, props) : createInspectorTableVisualization($scope, props);
 
-			// When table is created/updated
-			promise.then( function() {
-
-				// Trigger table state
-				$scope.fsm.open();
-
-				// Get the inspector table's properties
-				return getEffectivePropertiesById($scope.tableInspectorId).then( function( modelProps ) {
-
-					// Keep dimensions
-					props.props.tableDimensions = modelProps.qHyperCubeDef.qDimensions.map(a => a.dimension);
-
-					return updateExtensionVisualization($scope, props);
-				});
-			});
 		}).catch(console.error);
 	},
 
@@ -1290,8 +1275,8 @@ define([
 
 			// Get the inspector table's object model
 			app.getObject($scope.tableInspectorId).then( function( model ) {
-				var noOfTableCols = $scope.tableData.qData.qFields.length,
-				    noOfTableRows = Math.max.apply(null, $scope.tableData.qData.qFields.map(a => a.qnRows)),
+				var noOfTableCols = $scope.selectedTableData.qData.qFields.length,
+				    noOfTableRows = Math.max.apply(null, $scope.selectedTableData.qData.qFields.map(a => a.qnRows)),
 				    noOfCols = model.layout.qHyperCube.qSize.qcx,
 				    noOfRows = model.layout.qHyperCube.qSize.qcy;
 
@@ -1353,38 +1338,39 @@ define([
 		$scope.fsm = new util.StateMachine({
 			name: "emergoTableInspector",
 			transitions: [{
-				from: "IDLE", to: "LOAD_TABLE", name: "SELECT"
+				from: "IDLE", to: "TABLE", name: "SELECT"
 			}, {
-				from: "LOAD_TABLE", to: "TABLE", name: "OPEN"
-			}, {
-				from: "LOAD_TABLE", to: "IDLE", name: "CLOSE"
-			}, {
-				from: "TABLE", to: "LOAD_TABLE", name: "SELECT"
+				from: "TABLE", to: "TABLE", name: "SELECT"
 			}, {
 				from: "TABLE", to: "IDLE", name: "CLOSE"
 			}],
 			on: {
 				beforeSelect: function( lifecycle, tableData ) {
+					$scope.loading = true;
+
+					// Reset custom footnotes
+					$scope.footnotes = [];
 
 					// Keep table data
-					$scope.tableData = tableData;
+					if (tableData) {
+						$scope.selectedTableData = tableData;
+					}
 				},
-				enterLoadTable: function() {
-					$scope.loading = true;
+				enterTable: function() {
 
 					// When (re)loading, clear any stored manipulations
 					$scope.removedFields = [];
 					$scope.addedMeasures = [];
 
 					// Setup table visualization
-					return selectTable($scope, $scope.tableData);
+					return selectTable($scope, $scope.selectedTableData);
 				},
-				afterOpen: function() {
+				afterSelect: function() {
 					$scope.loading = false;
 				},
 				leaveTable: function( lifecycle ) {
 
-					// Reset custom footnote
+					// Reset custom footnotes
 					$scope.footnotes = [];
 
 					// Bail when loading a new table
@@ -1404,6 +1390,11 @@ define([
 						// Detach id from scope
 						$scope.tableInspectorId = undefined;
 					});
+				},
+				afterClose: function() {
+
+					// Remove table data
+					$scope.selectedTableData = false;
 				}
 			}
 		});
@@ -1411,8 +1402,8 @@ define([
 		// Container id
 		$scope.containerId = "qs-emergo-table-inspector-".concat($scope.$id);
 
-		// The table data
-		$scope.tableData = false;
+		// The selected table data
+		$scope.selectedTableData = false;
 
 		// Removed fields
 		$scope.removedFields = $scope.layout.props.removedFields || [];
@@ -1490,7 +1481,7 @@ define([
 		 * @return {Void}
 		 */
 		$scope.open = function() {
-			if (! $scope.object.inEditState() && ! $scope.options.noInteraction && ! $scope.tableInspectorId) {
+			if (! $scope.object.inEditState() && ! $scope.options.noInteraction && ! $scope.selectedTableData) {
 				popover.isActive() ? popover.close() : popover.open();
 			}
 		};
@@ -2348,12 +2339,9 @@ define([
 		 * @return {Void}
 		 */
 		beforeDestroy: function() {
-			var $scope = this.$scope;
 
-			// Remove the table inspector visualization
-			if ($scope.tableInspectorId) {
-				$scope.fsm.close();
-			}
+			// Close the active state to remove any visualization
+			this.$scope.fsm.close();
 		},
 
 		support: {
