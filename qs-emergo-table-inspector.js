@@ -1280,9 +1280,6 @@ define([
 				    noOfCols = model.layout.qHyperCube.qSize.qcx,
 				    noOfRows = model.layout.qHyperCube.qSize.qcy;
 
-				// Num rows
-				notes.push("".concat(Number(noOfRows).toLocaleString(), noOfRows !== 1 ? " rows" : " row"));
-
 				// Full table size
 				notes.push("Full: ".concat(Number(noOfTableCols).toLocaleString(), " × ", Number(noOfTableRows).toLocaleString()));
 
