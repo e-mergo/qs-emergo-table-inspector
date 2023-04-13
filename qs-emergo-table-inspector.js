@@ -582,13 +582,16 @@ define([
 					// Synchronize table properties to the extension
 					getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
 
-						// Keep column ordering and sorting
+						// Store the current column order and sort order
 						// On manual column ordering dimensions and fields are just reordered in the
 						// qHyperCubeDef.qDimensions list, so save their locations separately in a list
-						// of table dimensions.
+						// of table dimensions. A similar thing happens for measures where both the
+						// column order and the order of measures in the qHyperCubeDef.qMeasures list
+						// is reset.
 						updateExtensionVisualization($scope, {
 							props: {
-								tableDimensions: props.qHyperCubeDef.qDimensions.map(a => a.dimension)
+								tableDimensions: props.qHyperCubeDef.qDimensions.map(a => a.dimension),
+								addedMeasures: props.qHyperCubeDef.qMeasures.map(a => a.measure)
 							},
 							qHyperCubeDef: {
 								qColumnOrder: props.qHyperCubeDef.qColumnOrder,
@@ -1136,7 +1139,7 @@ define([
 	addTableMeasure = function( $scope, tableData, measure, position ) {
 
 		// Add the measure to the table's added measures list
-		$scope.addedMeasures = $scope.addedMeasures.concat(measure);
+		$scope.addedMeasures = $scope.addedMeasures.concat([measure]);
 
 		// Get the inspector table's properties
 		return getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
