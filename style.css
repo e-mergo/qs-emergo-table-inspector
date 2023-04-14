@@ -38,8 +38,9 @@
 .qs-emergo-table-inspector.loading .inspector-loading ~ div,
 .qs-emergo-table-inspector:not(.loading) .inspector-loading,
 .qs-emergo-table-inspector.table-selected > .requirements-wrapper,
-.qs-emergo-table-inspector:not(.table-selected) .object-container,
-.qs-emergo-table-inspector:not(.table-selected) .qv-footer-wrapper {
+.qs-emergo-table-inspector.profile-selected > .requirements-wrapper,
+.qs-emergo-table-inspector:not(.table-selected, .profile-selected) .object-container,
+.qs-emergo-table-inspector:not(.table-selected, .profile-selected) .qv-footer-wrapper {
 	display: none;
 }
 
@@ -83,6 +84,26 @@
 
 .qs-emergo-table-inspector .qv-footer-wrapper .footnote:nth-of-type(n+2) {
 	margin-left: 24px;
+}
+
+.qs-emergo-table-inspector .qv-footer-wrapper .quick-action .lui-button {
+	height: 30px;
+	padding: 6px 10px;
+	font-size: 1em;
+	font-weight: normal;
+	line-height: 1.4em;
+	border: 0px;
+}
+
+.qs-emergo-table-inspector .qv-footer-wrapper .quick-action .lui-button:focus span,
+.qs-emergo-table-inspector .qv-footer-wrapper .quick-action .lui-button:hover span,
+.qs-emergo-table-inspector .qv-footer-wrapper .quick-action .lui-button:active span {
+	text-decoration: underline;
+}
+
+.qs-emergo-table-inspector .qv-footer-wrapper .quick-action .lui-button:active {
+	background: none;
+	box-shadow: none;
 }
 
 /* Card-based themes */

@@ -1,4 +1,4 @@
-<div class="qs-emergo-table-inspector" ng-class="{'table-selected': tableInspectorId && !object.inEditState(), 'loading': loading, 'no-interaction': options.noInteraction}">
+<div class="qs-emergo-table-inspector" ng-class="{'table-selected': tableInspectorId && !object.inEditState(), 'profile-selected': tableProfileId && !object.inEditState(), 'loading': loading, 'no-interaction': options.noInteraction}">
 	<div class="inspector-loading">
 		<div class="qv-loader modal-loader"></div>
 	</div>
@@ -19,7 +19,7 @@
 				</span>
 			</p>
 
-			<p ng-if="object.inEditState() && tableInspectorId && canConvertToTable()" class="incomplete-text">
+			<p ng-if="object.inEditState() && canConvertToTable()" class="incomplete-text">
 				<span>or
 					<button class="lui-button convert-to-table" qva-activate="convertToTable()" q-translation="contextMenu.convertTo, Table"></button>
 				</span>
@@ -33,5 +33,8 @@
 				<span class="footnote" ng-repeat="footnote in footnotes" ng-attr-title="{{footnote}}" ng-bind-html="footnote"></span>
 			</div>
 		</footer>
+		<div class="qv-object-footnote quick-action" ng-if="tableInspectorId || tableProfileId">
+			<lui-button class="lui-fade-button" qva-activate="toggleTableView()"><span class="lui-fade-button__text" ng-style="styles.footerActionButton">{{ tableInspectorId && 'View table profile' || tableProfileId && 'View table inspector' }}</span></lui-button>
+		</div>
 	</div>
 </div>

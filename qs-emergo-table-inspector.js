@@ -681,18 +681,23 @@ define([
 	 * @return {Promise}       Extension is converted
 	 */
 	convertExtensionToStraightTableVisualization = function( $scope ) {
+		var dfd = $q.defer();
+
+		// Require the inspector table first when a data table is selected
+		if (! $scope.tableInspectorId && $scope.selectedTableData) {
+			$scope.fsm.select().then(dfd.resolve);
+		} else {
+			dfd.resolve();
+		}
 
 		// Get the inspector table's properties
-		return getEffectivePropertiesById($scope.tableInspectorId).then( function( props ) {
+		return dfd.promise.then(() => getEffectivePropertiesById($scope.tableInspectorId)).then( function( props ) {
 
 			// Populate dimension column id values
 			props.qHyperCubeDef.qDimensions = props.qHyperCubeDef.qDimensions;
 
 			// Populate measure column id values
 			props.qHyperCubeDef.qMeasures = props.qHyperCubeDef.qMeasures;
-
-			// Remove inspector properties
-			delete props.props;
 
 			// Reset metadata
 			props.qHyperCubeDef.qCalcCondition = {};
@@ -1265,16 +1270,156 @@ define([
 	},
 
 	/**
+	 * Return the properties of the table profile visualization
+	 *
+	 * @param  {Object} tableData Table data
+	 * @return {Promise}          Visualization properties
+	 */
+	getTableProfileProps = function( tableData ) {
+		/**
+		 * Holds the property definition of the table profile visualization
+		 *
+		 * @type {Object}
+		 */
+		var props = {
+			qHyperCubeDef: {
+				qDimensions: [],
+				qMeasures: []
+			},
+			showTitles: true,
+			title: "Table Profile - ".concat(tableData.value),
+			totals: { show: false },
+			multiline: {
+				wrapTextInHeaders: false,
+				wrapTextInCells: false
+			},
+		},
+
+		/**
+		 * Holds the details for the profile columns
+		 *
+		 * @type {Object}
+		 */
+		columns = {
+			uniqueValues: { label: "Unique values", list: [] },
+			uniqueness: { label: "Uniqueness", list: [] },
+			subsetRatio: { label: translator.get("DataModelViewer.Footer.Metadata.SubsetRatio"), list: [] },
+			nullCount: { label: translator.get("QCS.Common.DataProfile.prop_nullValueCount"), list: [] },
+			density: { label: translator.get("DataModelViewer.Footer.Metadata.Density"), list: [] },
+			textCount: { label: translator.get("QCS.Common.DataProfile.prop_textValueCount"), list: [] },
+			numericCount: { label: translator.get("QCS.Common.DataProfile.prop_numericValueCount"), list: [] },
+			emptyCount: { label: translator.get("QCS.Common.DataProfile.prop_emptyStringCount"), list: [] },
+			positiveCount: { label: translator.get("QCS.Common.DataProfile.prop_positiveValueCount"), list: [] },
+			negativeCount: { label: translator.get("QCS.Common.DataProfile.prop_negativeValueCount"), list: [] },
+			zeroCount: { label: translator.get("QCS.Common.DataProfile.prop_zeroValueCount"), list: [] },
+			size: { label: "Size", list: [] },
+			avgBytes: { label: "Avg bytes", list: [] },
+			tags: { label: translator.get("QCS.Common.DataProfile.prop_tags"), list: [], alignLeft: true },
+			format: { label: "Format", list: [] },
+			comment: { label: translator.get("DataModelViewer.Footer.Metadata.Comment"), list: [], alignLeft: true },
+		};
+
+		return app.model.engineApp.getTableProfileData(tableData.value).then( function( tableProfile ) {
+			var fields = [], valueList, i, measure;
+
+			// Walk all table fields
+			tableData.qData.qFields.forEach( function( tField ) {
+				var pField = tableProfile.qProfiling.qFieldProfiling.find(a => a.qName === tField.qName);
+
+				// Add field
+				fields.push(pField.qName);
+
+				// Populate metadata fields
+				columns.uniqueValues.list.push({field: pField.qName, value: "'".concat(Number(pField.qDistinctValues).toLocaleString(), "'") });
+				columns.uniqueness.list.push({field: pField.qName, value: "'".concat(Number(Math.round((pField.qDistinctValues / tField.qnRows * 100) * 100) / 100).toLocaleString(), "%'") });
+				columns.subsetRatio.list.push({field: pField.qName, value: "'".concat(Number(Math.round((tField.qSubsetRatio * 100) * 100) / 100).toLocaleString(), "%'") });
+				columns.nullCount.list.push({field: pField.qName, value: "'".concat(Number(pField.qNullValues).toLocaleString(), "'") });
+				columns.density.list.push({field: pField.qName, value: "'".concat(Number(Math.round(((tField.qnRows - pField.qNullValues) / tField.qnRows * 100) * 100) / 100).toLocaleString(), "%'") });
+				columns.textCount.list.push({field: pField.qName, value: "'".concat(Number(pField.qTextValues).toLocaleString(), "'") });
+				columns.numericCount.list.push({field: pField.qName, value: "'".concat(Number(pField.qNumericValues).toLocaleString(), "'") });
+				columns.emptyCount.list.push({field: pField.qName, value: "'".concat(Number(pField.qEmptyStrings).toLocaleString(), "'") });
+				columns.positiveCount.list.push({field: pField.qName, value: "'".concat(Number(pField.qPosValues).toLocaleString(), "'") });
+				columns.negativeCount.list.push({field: pField.qName, value: "'".concat(Number(pField.qNegValues).toLocaleString(), "'") });
+				columns.zeroCount.list.push({field: pField.qName, value: "'".concat(Number(pField.qZeroValues).toLocaleString(), "'") });
+				// columns.size.list.push({field: pField.qName, value: "'?'" });
+				// columns.avgBytes.list.push({field: pField.qName, value: "'?'" });
+				columns.tags.list.push({field: pField.qName, value: "'".concat(pField.qFieldTags.join(", "), "'") });
+				// columns.format.list.push({field: pField.qName, value: "'?'" });
+				columns.comment.list.push({field: pField.qName, value: "'".concat(tField.qComment || "", "'") });
+			});
+
+			// Create the value list
+			valueList = "ValueList('".concat(fields.join("','"), "')");
+
+			// Start first hypercube field
+			props.qHyperCubeDef.qDimensions.push(createHyperCubeDefDimension("=".concat(valueList), translator.get("Common.Field")));
+
+			// Walk all metadata fields
+			for (i in columns) {
+				if (columns.hasOwnProperty(i) && columns[i].list.length) {
+
+					// Create measure sans aggregation
+					measure = createHyperCubeDefMeasure(
+						columns[i].list.map(a => "IF ( ".concat(valueList, " = '", a.field, "', ", a.value)).join(", ").concat(")".repeat(columns[i].list.length)),
+						columns[i].label
+					);
+
+					// Set additional definition paramaters
+					if (columns[i].alignLeft) {
+						measure.qDef.textAlign = { auto: false, align: "left" };
+					}
+
+					// Add profile hypercube field
+					props.qHyperCubeDef.qMeasures.push(measure);
+				}
+			}
+
+			return props;
+		});
+	},
+
+	/**
+	 * Create the profile table
+	 *
+	 * @param  {Object} $scope    Extension scope
+	 * @param  {Object} tableData Table data
+	 * @return {Promise}          Profile table is created
+	 */
+	createTableProfileVisualization = function( $scope, tableData ) {
+		return getTableProfileProps(tableData).catch(console.error).then( function( newProps ) {
+
+			// Create viz-on-the-fly with profile data
+			return app.visualization.create("table", [], newProps).then( function( object ) {
+
+				// Store visualization id for future reference
+				$scope.tableProfileId = object.id;
+
+				// Insert object in the extension's element
+				return object.show($scope.containerId, {
+					onRendered: function() {
+
+						// Update the custom footnote
+						setCustomFootnote($scope);
+					},
+
+					// Disable selections
+					noSelections: true
+				});
+			});
+		});
+	},
+
+	/**
 	 * Update the custom footnote
 	 *
 	 * @param  {Object} $scope Extension scope
 	 * @return {Void}
 	 */
 	setCustomFootnote = function( $scope ) {
-		var notes = [];
 
 		// Table inspector visualization
 		if ($scope.tableInspectorId) {
+			var notes = [];
 
 			// Get the inspector table's object model
 			app.getObject($scope.tableInspectorId).then( function( model ) {
@@ -1293,6 +1438,15 @@ define([
 			}).then( function() {
 				$scope.footnotes = notes;
 			});
+
+		// Table profile visualization
+		} else if ($scope.tableProfileId) {
+			var noOfTableCols = $scope.selectedTableData.qData.qFields.length,
+			    noOfTableRows = Math.max.apply(null, $scope.selectedTableData.qData.qFields.map(a => a.qnRows));
+
+			// Full table size
+			$scope.footnotes = ["Full: ".concat(Number(noOfTableCols).toLocaleString(), " × ", Number(noOfTableRows).toLocaleString())];
+
 		} else {
 			$scope.footnotes = [];
 		}
@@ -1343,6 +1497,14 @@ define([
 				from: "TABLE", to: "TABLE", name: "SELECT"
 			}, {
 				from: "TABLE", to: "IDLE", name: "CLOSE"
+			}, {
+				from: "TABLE", to: "PROFILE", name: "VIEW_PROFILE"
+			}, {
+				from: "PROFILE", to: "PROFILE", name: "VIEW_PROFILE"
+			}, {
+				from: "PROFILE", to: "TABLE", name: "SELECT"
+			}, {
+				from: "PROFILE", to: "IDLE", name: "CLOSE"
 			}],
 			on: {
 				beforeSelect: function( lifecycle, tableData ) {
@@ -1395,6 +1557,35 @@ define([
 
 					// Remove table data
 					$scope.selectedTableData = false;
+				},
+				beforeViewProfile: function() {
+					$scope.loading = true;
+				},
+				afterViewProfile: function() {
+					$scope.loading = false;
+				},
+				enterProfile: function() {
+
+					// Setup profile visualization
+					return createTableProfileVisualization($scope, $scope.selectedTableData);
+				},
+				leaveProfile: function() {
+
+					// Reset custom footnotes
+					$scope.footnotes = [];
+
+					// Get the inspector table
+					return app.getObject($scope.tableProfileId).then( function( model ) {
+
+						// Break engine connection and destroy scope
+						model.close();
+
+						// Clear inner html
+						$("#".concat($scope.containerId)).empty();
+
+						// Detach id from scope
+						$scope.tableProfileId = undefined;
+					});
 				}
 			}
 		});
@@ -1430,6 +1621,10 @@ define([
 					"font-family": getThemeStyle("title.footer", "fontFamily"),
 					color: getThemeStyle("title.footer", "color"),
 					"background-color": getThemeStyle("title.footer", "backgroundColor")
+				},
+				footerActionButton: {
+					"font-family": getThemeStyle("title.footer", "fontFamily"),
+					color: getThemeStyle("title.footer", "color")
 				}
 			};
 		});
@@ -1453,6 +1648,25 @@ define([
 
 			// Open the app popover after the mode is fully switched
 			qvangular.$rootScope.$$postDigest($scope.open);
+		};
+
+		/**
+		 * Toggle the table view
+		 *
+		 * @return {Void}
+		 */
+		$scope.toggleTableView = function() {
+			if (! $scope.object.inEditState()) {
+
+				// View table profile
+				if ($scope.tableInspectorId) {
+					$scope.fsm.viewProfile();
+
+				// View table inspector
+				} else if ($scope.tableProfileId) {
+					$scope.fsm.select();
+				}
+			}
 		};
 
 		/**
@@ -1651,6 +1865,7 @@ define([
 	 * @return {Void}
 	 */
 	getContextMenu = function( object, menu, $event ) {
+
 		/**
 		 * Holds the extension's scope object
 		 *
@@ -1824,6 +2039,32 @@ define([
 		// Query tables, then add menu items
 		getAppTables().then( function( tables ) {
 
+			/**
+			 * Holds the cell's scope
+			 *
+			 * @type {Object}
+			 */
+			var $cellScope = getTableCellScope($event.target) || {},
+
+			/**
+			 * Holds the cell's cell data
+			 *
+			 * @type {Object}
+			 */
+			cell = $cellScope.cell || $cellScope.header || {};
+
+			// Copy cell value
+			if (cell.text) {
+				menu.addItem({
+					translation: "contextMenu.copyCellValue",
+					tid: "copy-cell-context-item",
+					icon: "lui-icon lui-icon--copy",
+					select: function() {
+						util.copyToClipboard(cell.text);
+					}
+				});
+			}
+
 			// When the inspector table is active
 			if ($scope.tableInspectorId) {
 
@@ -1900,20 +2141,6 @@ define([
 				numDimensions = object.layout.props.tableDimensions.filter(a => a.field).length,
 
 				/**
-				 * Holds the cell's scope
-				 *
-				 * @type {Object}
-				 */
-				$cellScope = getTableCellScope($event.target) || {},
-
-				/**
-				 * Holds the cell's cell data
-				 *
-				 * @type {Object}
-				 */
-				cell = $cellScope.cell || $cellScope.header || {},
-
-				/**
 				 * Holds the list of table columns
 				 *
 				 * Column indices are corrected for non-data columns.
@@ -1952,17 +2179,15 @@ define([
 					return a.colIx > max ? a.colIx : max;
 				}, 0);
 
-				// Copy cell value
-				if (cell.text) {
-					menu.addItem({
-						translation: "contextMenu.copyCellValue",
-						tid: "copy-cell-context-item",
-						icon: "lui-icon lui-icon--copy",
-						select: function() {
-							util.copyToClipboard(cell.text);
-						}
-					});
-				}
+				// View table profile
+				menu.addItem({
+					label: "View table profile",
+					tid: "view-table-profile",
+					icon: "lui-icon lui-icon--search",
+					select: function() {
+						$scope.fsm.viewProfile();
+					}
+				});
 
 				// Reset inspector
 				menu.addItem({
@@ -2229,6 +2454,43 @@ define([
 					icon: "lui-icon lui-icon--export",
 					select: function() {
 						app.getObject($scope.tableInspectorId).then( function( model ) {
+
+							// Open export modal
+							exportDialog.show(model);
+						});
+					}
+				});
+
+			// When the profile table is active
+			} else if ($scope.tableProfileId) {
+
+				// View table inspector
+				menu.addItem({
+					label: "View table inspector",
+					tid: "view-table-inspector",
+					icon: "lui-icon lui-icon--back",
+					select: function() {
+						$scope.fsm.select();
+					}
+				});
+
+				// Reset inspector
+				menu.addItem({
+					label: "Reset inspector",
+					tid: "reset-inspector",
+					icon: "lui-icon lui-icon--close",
+					select: function() {
+						resetExtensionVisualization($scope);
+					}
+				});
+
+				// Export data
+				menu.addItem({
+					translation: "contextMenu.export",
+					tid: "export",
+					icon: "lui-icon lui-icon--export",
+					select: function() {
+						app.getObject($scope.tableProfileId).then( function( model ) {
 
 							// Open export modal
 							exportDialog.show(model);
