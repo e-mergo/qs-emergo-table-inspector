@@ -605,10 +605,10 @@ define([
 				},
 
 				// When disabling interaction
-				noInteraction: $scope.options.noInteraction,
+				noInteraction: $scope.options && $scope.options.noInteraction,
 
 				// When disabling selections
-				noSelections: $scope.options.noSelections
+				noSelections: $scope.options && $scope.options.noSelections
 			});
 		});
 	},
@@ -1695,7 +1695,7 @@ define([
 		 * @return {Void}
 		 */
 		$scope.open = function() {
-			if (! $scope.object.inEditState() && ! $scope.options.noInteraction && ! $scope.selectedTableData) {
+			if (! $scope.object.inEditState() && ! ($scope.options && $scope.options.noInteraction) && ! $scope.selectedTableData) {
 				popover.isActive() ? popover.close() : popover.open();
 			}
 		};
