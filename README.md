@@ -1,7 +1,7 @@
 ---
-Qlik Sense Visualization Extension
+Type: Qlik Sense Visualization Extension
 Name: E-mergo Table Inspector
-Version: 1.3.20200918
+Version: 1.4-beta
 QEXT: qs-emergo-table-inspector.qext
 ---
 
@@ -153,7 +153,22 @@ Requests for additional features can be posted in the extension's GitHub reposit
 
 ## Changelog
 
-#### 1.3.20200918 - QS Sept 2020
+#### 1.4-beta - QS November 2022
+- Ready for Qlik Cloud.
+- Renamed extension label to improve discoverability in the extensions list.
+- Added the _Copy cell value_ action for table cells in the context menu.
+- Added the option to insert and remove dimensions for a selected field.
+- Added the option to insert and remove measures for a selected field.
+- Added the option to quickly convert the selected data table to a straight table visualization.
+- Added the option to remove all fields to the left or right of the selected field.
+- Added a row and column count in the extension's footer.
+- Added the table profile view.
+- Removed the requirement to always keep at least one field.
+- Fixed inserting new columns at the position of the context menu.
+- Fixed extension interaction when in noInteraction mode.
+- Updated docs files.
+
+#### 1.3.20200918 - QS September 2022
 - Fixed the layout for smaller extension object sizes.
 
 #### 1.2.20200731
