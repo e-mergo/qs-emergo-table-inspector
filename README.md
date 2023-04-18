@@ -31,16 +31,117 @@ On server installations that do not already have it registered, the Markdown fil
 Below is a detailed description of the available features of this extension.
 
 ### No Settings
-This extension is plug-and-play as it works with zero property settings. Insert the extension on a sheet and start selecting your data table! All the extension's options are available in the visualization's context menu (right-click).
+This extension is plug-and-play as it works with zero property settings. Insert the extension on a sheet and start selecting your data table! All the extension's options are available in the visualization's **context menu** (right-click).
 
 ### Select table
-When in Analysis mode, select a data table through the `Select Table` popup window. When a data table is already selected switch to a different data table by selecting `Switch table` in the extension's context menu (right-click).
+When in Analysis mode, select a data table through the `Select Table` popup window. When a data table is already selected switch to a different data table by selecting `Switch table` in the visualization's context menu (right-click).
 
 ### Reset inspector
-Clear the selected data table by selecting `Reset inspector` in the extension's context menu (right-click).
+Clear the selected data table by selecting `Reset inspector` in the visualization's context menu (right-click).
 
-### Adding and removing fields
-Remove or re-add fields by selecting `Remove field` or `Add field` in the extension's context menu (right-click). The menus also provide options for removing all-fields-but-one as well as adding all removed fields back in again.
+### Removing and adding fields
+Remove or re-add fields by selecting `Remove field` or `Add field` in the visualization's context menu (right-click). The context menu also provides an option for removing all but the selected field, as well as adding all removed fields back in again.
+
+### Adding and removing dimensions
+Add or remove dimensions based on a field by selecting `Add dimension` or `Remove dimension` in the visualization's context menu (right-click). The context menu also provides an option for removing all dimensions when any dimensions are added. The available dimensions for a field are categorised according to [Qlik's function help documentation](https://help.qlik.com/en-US/sense/November2022/Subsystems/Hub/Content/Sense_Hub/Scripting/functions-in-scripts-chart-expressions.htm):
+- Formatting functions
+  - Date
+  - Interval
+  - Money
+  - Num
+  - Time
+  - Timestamp
+- General numeric functions
+  - BitCount
+  - Ceil
+  - Even
+  - Fabs
+  - Fact
+  - Floor
+  - Frac
+  - Odd
+  - Round
+  - Sign
+- Logical functions
+  - IsNum
+  - IsText
+- NULL functions
+  - EmptyIsNull
+  - IsNull
+- String functions
+  - Capitalize
+  - Chr
+  - Evaluate
+  - Len
+  - Lower
+  - LTrim
+  - Ord
+  - RTrim
+  - Trim
+  - Upper
+
+### Adding and removing measures
+Add or remove measures based on a field by selecting `Add measure` or `Remove measure` in the visualization's context menu (right-click). The context menu also provides an option for removing all measures when any measures are added. Quick selections are provided for Sum, Count, Count Distinct. The available measures for a field are categorised according to [Qlik's function help documentation](https://help.qlik.com/en-US/sense/November2022/Subsystems/Hub/Content/Sense_Hub/Scripting/AggregationFunctions/aggregation-functions.htm):
+- Basic aggregation
+  - Max
+  - Min
+  - Mode
+  - Only
+  - Sum
+- Counter aggregation
+  - Count
+  - Count Distinct
+  - MissingCount
+  - MissingCount Distinct
+  - NullCount
+  - NullCount Distinct
+  - NumericCount
+  - NumericCount Distinct
+  - TextCount
+  - TextCount Distinct
+- Statistical aggregation
+  - Avg
+  - Kurtosis
+  - Median
+  - Skew
+  - Stdev
+  - Sterr
+- String aggregation
+  - Concat Distinct
+  - MaxString
+  - MinString
+
+### Remove columns
+To remove other columns but the selected column, choose one of the alternatives in the context menu (right-click), depending on the context:
+- Remove all other columns
+- Remove all columns to the left
+- Remove all columns to the right
+- Remove all fields
+- Remove all dimensions
+- Remove all measures
+- Remove a different single field
+
+### Row and column counts
+When viewing a data table, the extension's footer displays various counts of the table's data: the full data table size (columns by rows), and the visible table size (columns by rows).
+
+### View table profile
+Optionally the data table's metadata is available in the table profile view. Choose `View table profile` in the visualization's context menu (right-click) or in the table's footer. Per field in the data table the following statistics are presented:
+- Unique value count
+- Uniqueness ratio (unique value count divided by table row count)
+- Subset ratio (unique value count divided by total unique value count)
+- Null value count
+- Density (non-null value count divided by table row count)
+- Text value count
+- Numeric value count
+- Empty string count
+- Positive number count
+- Negative number count
+- Zero number count
+- Tags
+- Field comment
+
+### Convert to table
+When in Edit mode, quickly convert the selected data table to an actual straight table by selecting the `Convert to: Table` button or in the visualization's context menu (right-click). Converting to a straight table or any other visualization is also possible through the conventional way of converting a visualization to a different type.
 
 ## FAQ
 
