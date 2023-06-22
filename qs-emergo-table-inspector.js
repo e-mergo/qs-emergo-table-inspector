@@ -970,7 +970,7 @@ define([
 				qMeasures = [];
 
 				// Add all other fields to the table's hidden fields list
-				$scope.removedFields = tableData.qData.qFields.filter(a => a !== fieldName).map(a => a.qName);
+				$scope.removedFields = tableData.qData.qFields.filter(a => a.qName !== fieldName).map(a => a.qName);
 
 				// Remove other manipulations
 				$scope.addedMeasures = [];
