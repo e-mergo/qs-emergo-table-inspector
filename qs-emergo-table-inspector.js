@@ -1284,7 +1284,8 @@ define([
 		var props = {
 			qHyperCubeDef: {
 				qDimensions: [],
-				qMeasures: []
+				qMeasures: [],
+				qColumnOrder: [0]
 			},
 			showTitles: true,
 			title: "Table Profile - ".concat(tableData.value),
@@ -1314,13 +1315,13 @@ define([
 			zeroCount: { label: translator.get("QCS.Common.DataProfile.prop_zeroValueCount"), list: [] },
 			size: { label: "Size", list: [] },
 			avgBytes: { label: "Avg bytes", list: [] },
-			tags: { label: translator.get("QCS.Common.DataProfile.prop_tags"), list: [], alignLeft: true },
-			format: { label: "Format", list: [] },
-			comment: { label: translator.get("DataModelViewer.Footer.Metadata.Comment"), list: [], alignLeft: true },
+			tags: { label: translator.get("QCS.Common.DataProfile.prop_tags"), list: [], isText: true },
+			format: { label: "Format", list: [], isText: true },
+			comment: { label: translator.get("DataModelViewer.Footer.Metadata.Comment"), list: [], isText: true },
 		};
 
 		return app.model.engineApp.getTableProfileData(tableData.value).then( function( tableProfile ) {
-			var fields = [], valueList, i, measure;
+			var fields = [], valueList, i, def, ix;
 
 			// Walk all table fields
 			tableData.qData.qFields.forEach( function( tField ) {
@@ -1349,28 +1350,42 @@ define([
 			});
 
 			// Create the value list
-			valueList = "ValueList('".concat(fields.join("','"), "')");
+			matchList = "Match($Field,'".concat(fields.join("','"), "')");
 
 			// Start first hypercube field
-			props.qHyperCubeDef.qDimensions.push(createHyperCubeDefDimension("=".concat(valueList), translator.get("Common.Field")));
+			props.qHyperCubeDef.qDimensions.push(createHyperCubeDefDimension("=$Field", translator.get("Common.Field")));
 
 			// Walk all metadata fields
 			for (i in columns) {
 				if (columns.hasOwnProperty(i) && columns[i].list.length) {
 
-					// Create measure sans aggregation
-					measure = createHyperCubeDefMeasure(
-						columns[i].list.map(a => "IF ( ".concat(valueList, " = '", a.field, "', ", a.value)).join(", ").concat(")".repeat(columns[i].list.length)),
-						columns[i].label
-					);
+					// Process text column as dimension
+					if (columns[i].isText) {
+						def = createHyperCubeDefDimension(
+							"=Pick(".concat(matchList, ",", columns[i].list.map(a => a.value).join(", "), ")"),
+							columns[i].label
+						);
 
-					// Set additional definition paramaters
-					if (columns[i].alignLeft) {
-						measure.qDef.textAlign = { auto: false, align: "left" };
+						// Add profile hypercube field
+						ix = props.qHyperCubeDef.qDimensions.push(def) - 1;
+
+						// Define field order. Move all measures 1 place up
+						props.qHyperCubeDef.qColumnOrder = props.qHyperCubeDef.qColumnOrder.map(a => a >= ix ? a + 1 : a);
+						props.qHyperCubeDef.qColumnOrder.push(ix);
+
+					// Create measure
+					} else {
+						def = createHyperCubeDefMeasure(
+							"Only({<$Table={'".concat(tableData.value, "'}>} Pick(", matchList, ",", columns[i].list.map(a => a.value).join(", "), "))"),
+							columns[i].label
+						);
+
+						// Add profile hypercube field
+						ix = props.qHyperCubeDef.qMeasures.push(def) - 1;
+
+						// Define field order
+						props.qHyperCubeDef.qColumnOrder.push(props.qHyperCubeDef.qDimensions.length + ix);
 					}
-
-					// Add profile hypercube field
-					props.qHyperCubeDef.qMeasures.push(measure);
 				}
 			}
 
