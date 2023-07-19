@@ -1,7 +1,7 @@
 ---
 Type: Qlik Sense Visualization Extension
 Name: E-mergo Table Inspector
-Version: 1.4-beta.2
+Version: 1.4-beta.3
 QEXT: qs-emergo-table-inspector.qext
 ---
 
