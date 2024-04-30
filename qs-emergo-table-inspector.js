@@ -9,11 +9,11 @@
  * @param  {Object} $                jQuery
  * @param  {Object} _                Underscore
  * @param  {Object} $q               Angular's promise library
- * @param  {Object} qUtil            Qlik's utility library
  * @param  {Object} Resize           Qlik's resize API
  * @param  {Object} objectConversion Qlik's object conversion API
  * @param  {Object} props            Property panel definition
  * @param  {Object} initProps        Initial properties
+ * @param  {Object} qUtil            Imported Qlik utility library
  * @param  {Object} util             E-mergo utility functions
  * @param  {Object} uiUtil           E-mergo interface utility functions
  * @param  {String} css              Extension stylesheet
@@ -27,17 +27,17 @@ define([
 	"underscore",
 	"ng!$q",
 	"translator",
-	"util",
 	"core.utils/resize",
 	"objects.extension/object-conversion",
 	"client.services/export-dialog/export-dialog",
 	"./properties",
 	"./initial-properties",
+	"./util/qlik-util",
 	"./util/util",
 	"./util/ui-util",
 	"text!./style.css",
 	"text!./template.ng.html"
-], function( qlik, qvangular, $, _, $q, translator, qUtil, Resize, objectConversion, exportDialog, props, initProps, util, uiUtil, css, tmpl ) {
+], function( qlik, qvangular, $, _, $q, translator, Resize, objectConversion, exportDialog, props, initProps, qUtil, util, uiUtil, css, tmpl ) {
 
 	// Add global styles to the page
 	util.registerStyle("qs-emergo-table-inspector", css);
