@@ -1303,10 +1303,10 @@ define([
 		 */
 		columns = {
 			uniqueValues: { label: "Unique values", list: [] },
-			uniqueness: { label: "Uniqueness", list: [] },
-			subsetRatio: { label: translator.get("DataModelViewer.Footer.Metadata.SubsetRatio"), list: [] },
+			uniqueness: { label: "Uniqueness", list: [], format: percFormat },
+			subsetRatio: { label: translator.get("DataModelViewer.Footer.Metadata.SubsetRatio"), list: [], format: percFormat },
 			nullCount: { label: translator.get("QCS.Common.DataProfile.prop_nullValueCount"), list: [] },
-			density: { label: translator.get("DataModelViewer.Footer.Metadata.Density"), list: [] },
+			density: { label: translator.get("DataModelViewer.Footer.Metadata.Density"), list: [], format: percFormat },
 			textCount: { label: translator.get("QCS.Common.DataProfile.prop_textValueCount"), list: [] },
 			numericCount: { label: translator.get("QCS.Common.DataProfile.prop_numericValueCount"), list: [] },
 			emptyCount: { label: translator.get("QCS.Common.DataProfile.prop_emptyStringCount"), list: [] },
@@ -1327,24 +1327,29 @@ define([
 			tableData.qData.qFields.forEach( function( tField ) {
 				var pField = tableProfile.qProfiling.qFieldProfiling.find(a => a.qName === tField.qName);
 
+				// Bail when field not found (synthetic)
+				if (! pField) {
+					return;
+				}
+
 				// Add field
 				fields.push(pField.qName);
 
 				// Populate metadata fields
-				columns.uniqueValues.list.push({field: pField.qName, value: "'".concat(Number(pField.qDistinctValues).toLocaleString(), "'") });
-				columns.uniqueness.list.push({field: pField.qName, value: "'".concat(Number(Math.round((pField.qDistinctValues / tField.qnRows * 100) * 100) / 100).toLocaleString(), "%'") });
-				columns.subsetRatio.list.push({field: pField.qName, value: "'".concat(Number(Math.round((tField.qSubsetRatio * 100) * 100) / 100).toLocaleString(), "%'") });
-				columns.nullCount.list.push({field: pField.qName, value: "'".concat(Number(pField.qNullValues).toLocaleString(), "'") });
-				columns.density.list.push({field: pField.qName, value: "'".concat(Number(Math.round(((tField.qnRows - pField.qNullValues) / tField.qnRows * 100) * 100) / 100).toLocaleString(), "%'") });
-				columns.textCount.list.push({field: pField.qName, value: "'".concat(Number(pField.qTextValues).toLocaleString(), "'") });
-				columns.numericCount.list.push({field: pField.qName, value: "'".concat(Number(pField.qNumericValues).toLocaleString(), "'") });
-				columns.emptyCount.list.push({field: pField.qName, value: "'".concat(Number(pField.qEmptyStrings).toLocaleString(), "'") });
-				columns.positiveCount.list.push({field: pField.qName, value: "'".concat(Number(pField.qPosValues).toLocaleString(), "'") });
-				columns.negativeCount.list.push({field: pField.qName, value: "'".concat(Number(pField.qNegValues).toLocaleString(), "'") });
-				columns.zeroCount.list.push({field: pField.qName, value: "'".concat(Number(pField.qZeroValues).toLocaleString(), "'") });
+				columns.uniqueValues.list.push({field: pField.qName, value: pField.qDistinctValues });
+				columns.uniqueness.list.push({field: pField.qName, value: pField.qDistinctValues / tField.qnRows });
+				columns.subsetRatio.list.push({field: pField.qName, value: tField.qSubsetRatio });
+				columns.nullCount.list.push({field: pField.qName, value: pField.qNullValues });
+				columns.density.list.push({field: pField.qName, value: (tField.qnRows - pField.qNullValues) / tField.qnRows });
+				columns.textCount.list.push({field: pField.qName, value: pField.qTextValues });
+				columns.numericCount.list.push({field: pField.qName, value: pField.qNumericValues });
+				columns.emptyCount.list.push({field: pField.qName, value: pField.qEmptyStrings });
+				columns.positiveCount.list.push({field: pField.qName, value: pField.qPosValues });
+				columns.negativeCount.list.push({field: pField.qName, value: pField.qNegValues });
+				columns.zeroCount.list.push({field: pField.qName, value: pField.qZeroValues });
 				// columns.size.list.push({field: pField.qName, value: "'?'" });
 				// columns.avgBytes.list.push({field: pField.qName, value: "'?'" });
-				columns.tags.list.push({field: pField.qName, value: "'".concat(pField.qFieldTags.join(", "), "'") });
+				columns.tags.list.push({field: pField.qName, value: "'".concat(pField.qFieldTags.join(" "), "'") });
 				// columns.format.list.push({field: pField.qName, value: "'?'" });
 				columns.comment.list.push({field: pField.qName, value: "'".concat(tField.qComment || "", "'") });
 			});
@@ -1358,12 +1363,13 @@ define([
 			// Walk all metadata fields
 			for (i in columns) {
 				if (columns.hasOwnProperty(i) && columns[i].list.length) {
+					var column = columns[i];
 
 					// Process text column as dimension
-					if (columns[i].isText) {
+					if (column.isText) {
 						def = createHyperCubeDefDimension(
-							"=Pick(".concat(matchList, ",", columns[i].list.map(a => a.value).join(", "), ")"),
-							columns[i].label
+							"=Pick(".concat(matchList, ",", column.list.map(a => a.value).join(", "), ")"),
+							column.label
 						);
 
 						// Add profile hypercube field
@@ -1376,9 +1382,16 @@ define([
 					// Create measure
 					} else {
 						def = createHyperCubeDefMeasure(
-							"Only({<$Table={'".concat(tableData.value, "'}>} Pick(", matchList, ",", columns[i].list.map(a => a.value).join(", "), "))"),
-							columns[i].label
+							"Only({<$Table={'".concat(tableData.value, "'}>} Pick(", matchList, ",", column.list.map(a => a.value).join(", "), "))"),
+							column.label
 						);
+
+						// Custom or default formatting
+						if (column.hasOwnProperty("format")) {
+							def.qDef.qNumFormat = column.format;
+						} else {
+							def.qDef.qNumFormat = numFormat;
+						}
 
 						// Add profile hypercube field
 						ix = props.qHyperCubeDef.qMeasures.push(def) - 1;
@@ -2579,6 +2592,48 @@ define([
 		retval.properties.title = "";
 
 		return retval;
+	},
+
+	/**
+	 * Holds the decimal separator token
+	 *
+	 * @type {String}
+	 */
+	appDecimalSep = app?.model?.layout?.qLocaleInfo?.qDecimalSep || ".",
+
+	/**
+	 * Holds the thousands separator token
+	 *
+	 * @type {String}
+	 */
+	appThousandSep = app?.model?.layout?.qLocaleInfo?.qThousandSep || ",",
+
+	/**
+	 * Holds the default number measure format definition
+	 *
+	 * @type {Object}
+	 */
+	numFormat = {
+		"qType": "F",
+		"qnDec": 2,
+		"qUseThou": 0,
+		"qFmt": "#".concat(appThousandSep, "##0"),
+		"qDec": appDecimalSep,
+		"qThou": appThousandSep
+	},
+
+	/**
+	 * Holds the percentage measure format definition
+	 *
+	 * @type {Object}
+	 */
+	percFormat = {
+		"qType": "F",
+		"qnDec": 2,
+		"qUseThou": 0,
+		"qFmt": "0".concat(appDecimalSep, "00%"),
+		"qDec": appDecimalSep,
+		"qThou": appThousandSep
 	};
 
 	// Find the appprops object and subscribe to layout changes
