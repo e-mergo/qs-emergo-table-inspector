@@ -134,11 +134,10 @@ define([
 
 					if (item.qOriginalFields.length) {
 						add = item.qOriginalFields.map( function( b ) {
+							var __synTableName  = item.qName.concat(" Table"),
+							    originalField = tables.qtr.find(i => i.qName === __synTableName)?.qFields.find(i => i.qName === b);
 
-							// Original field metadata is not used, so only store the field's name
-							return {
-								qName: b
-							};
+							return originalField ? { ...originalField, __synTableName } : { qName: b };
 						});
 					} else {
 						add = [item];
@@ -1318,16 +1317,29 @@ define([
 			tags: { label: translator.get("QCS.Common.DataProfile.prop_tags"), list: [], isText: true },
 			format: { label: "Format", list: [], isText: true },
 			comment: { label: translator.get("DataModelViewer.Footer.Metadata.Comment"), list: [], isText: true },
+		},
+
+		/**
+		 * Holds promises for table profile data per table
+		 *
+		 * @type {Object}
+		 */
+		profileData = {
+			tableProfile: app.model.engineApp.getTableProfileData(tableData.value)
 		};
 
-		return app.model.engineApp.getTableProfileData(tableData.value).then( function( tableProfile ) {
-			var fields = [], valueList, i, def, ix;
+		// Add profile data for relevant synthetic tables
+		_.uniq(tableData.qData.qFields.map(a => a.__synTableName).filter(Boolean)).forEach(a => profileData[a] = app.model.engineApp.getTableProfileData(a));
+
+		return $q.all(profileData).then( function( tableProfiles ) {
+			var fields = [], valueList, i, def, ix,
+			    profileFields = Array.prototype.concat.apply([], _.values(tableProfiles).map(a => a.qProfiling.qFieldProfiling));
 
 			// Walk all table fields
 			tableData.qData.qFields.forEach( function( tField ) {
-				var pField = tableProfile.qProfiling.qFieldProfiling.find(a => a.qName === tField.qName);
+				var pField = profileFields.find(a => a.qName === tField.qName);
 
-				// Bail when field not found (synthetic)
+				// Bail when field is not found
 				if (! pField) {
 					return;
 				}
