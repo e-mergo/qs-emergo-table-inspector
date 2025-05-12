@@ -1456,6 +1456,17 @@ define([
 	 * @return {Void}
 	 */
 	setCustomFootnote = function( $scope ) {
+		var locale = app?.model?.layout?.qLocaleInfo?.qCollation,
+
+		/**
+		 * Format number according to locale
+		 *
+		 * @param  {Number} input Number to format
+		 * @return {String} Formatted number
+		 */
+		formatNumToLocale = function( input ) {
+			return Number(input).toLocaleString(locale);
+		};
 
 		// Table inspector visualization
 		if ($scope.tableInspectorId) {
@@ -1469,11 +1480,11 @@ define([
 				    noOfRows = model.layout.qHyperCube.qSize.qcy;
 
 				// Full table size
-				notes.push("Full: ".concat(Number(noOfTableCols).toLocaleString(), " × ", Number(noOfTableRows).toLocaleString()));
+				notes.push("Full: ".concat(formatNumToLocale(noOfTableCols), " × ", formatNumToLocale(noOfTableRows)));
 
 				// Visible size
 				if (! (noOfTableCols === noOfCols && noOfTableRows === noOfRows)) {
-					notes.push("Visible: ".concat(Number(noOfCols).toLocaleString(), " × ", Number(noOfRows).toLocaleString()));
+					notes.push("Visible: ".concat(formatNumToLocale(noOfCols), " × ", formatNumToLocale(noOfRows)));
 				}
 			}).then( function() {
 				$scope.footnotes = notes;
@@ -1485,7 +1496,7 @@ define([
 			    noOfTableRows = Math.max.apply(null, $scope.selectedTableData.qData.qFields.map(a => a.qnRows).filter(Boolean));
 
 			// Full table size
-			$scope.footnotes = ["Full: ".concat(Number(noOfTableCols).toLocaleString(), " × ", Number(noOfTableRows).toLocaleString())];
+			$scope.footnotes = ["Full: ".concat(formatNumToLocale(noOfTableCols), " × ", formatNumToLocale(noOfTableRows))];
 
 		} else {
 			$scope.footnotes = [];
