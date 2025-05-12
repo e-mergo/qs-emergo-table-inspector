@@ -1439,7 +1439,7 @@ define([
 			// Get the inspector table's object model
 			app.getObject($scope.tableInspectorId).then( function( model ) {
 				var noOfTableCols = $scope.selectedTableData.qData.qFields.length,
-				    noOfTableRows = Math.max.apply(null, $scope.selectedTableData.qData.qFields.map(a => a.qnRows)),
+				    noOfTableRows = Math.max.apply(null, $scope.selectedTableData.qData.qFields.map(a => a.qnRows).filter(Boolean)),
 				    noOfCols = model.layout.qHyperCube.qSize.qcx,
 				    noOfRows = model.layout.qHyperCube.qSize.qcy;
 
@@ -1457,7 +1457,7 @@ define([
 		// Table profile visualization
 		} else if ($scope.tableProfileId) {
 			var noOfTableCols = $scope.selectedTableData.qData.qFields.length,
-			    noOfTableRows = Math.max.apply(null, $scope.selectedTableData.qData.qFields.map(a => a.qnRows));
+			    noOfTableRows = Math.max.apply(null, $scope.selectedTableData.qData.qFields.map(a => a.qnRows).filter(Boolean));
 
 			// Full table size
 			$scope.footnotes = ["Full: ".concat(Number(noOfTableCols).toLocaleString(), " × ", Number(noOfTableRows).toLocaleString())];
