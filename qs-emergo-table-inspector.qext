@@ -3,7 +3,7 @@
 	"name": "Table Inspector",
 	"type": "visualization",
 	"author": "Laurens Offereins, E-mergo",
-	"version": "1.4-beta.3",
+	"version": "1.4-beta.4",
 	"description": "Quickly inspect data tables from the app's datamodel.",
 	"icon": "search",
 	"preview": "logo-emergo.png",
